@@ -344,6 +344,81 @@ H_w(s)=\\frac{s}{s+1/\\tau},
 \\qquad 1\\leq\\tau\\leq4\\ \\text{s}.
 $$
 
+## Update 2 — Work done on 20 October 2026
+
+### 11. Compensated Open-Loop Root-Locus Analysis
+
+The aircraft plant was combined with the specified rudder servo and washout filter to form the compensated open-loop transfer function. The initial washout time constant was set to $\tau=2\ \text{s}$.
+
+The component transfer functions are
+
+$$
+P(s)=\frac{-4.5s+0.75}{s^2+1.1s+4.2},
+\qquad
+G_s(s)=\frac{-10}{s+10},
+\qquad
+H_w(s)=\frac{s}{s+0.5}.
+$$
+
+The compensated open-loop transfer function, excluding the adjustable gain $K$, is
+
+$$
+L_0(s)=P(s)G_s(s)H_w(s)
+=\frac{(-4.5s+0.75)(-10)s}
+{(s^2+1.1s+4.2)(s+10)(s+0.5)}.
+$$
+
+### 11.1 Poles and zeros
+
+The open-loop poles are
+
+$$
+s=-0.55\pm j1.9742,\qquad s=-10,\qquad s=-0.5.
+$$
+
+The open-loop zeros are
+
+$$
+s=0,\qquad s=+0.16667.
+$$
+
+The complex-conjugate pair comes from the aircraft plant. The pole at $-10$ represents the servo dynamics, and the pole at $-0.5$ comes from the washout filter for $\tau=2\ \text{s}$. The washout filter introduces a zero at the origin. The aircraft plant contributes a right-half-plane zero at $+0.16667$.
+
+### 11.2 Interpreting the root-locus plot
+
+The root-locus plot displays the possible closed-loop pole locations as the scalar gain $K$ varies under MATLAB's standard negative-feedback convention. At zero gain, the branches begin at the four open-loop poles. As the gain changes, the branches move and terminate at the finite open-loop zeros or approach infinity.
+
+The horizontal axis is the real part of the pole and the vertical axis is its imaginary part. Poles in the left half-plane correspond to decaying modes; poles in the right half-plane correspond to growing modes. Complex poles indicate oscillatory behaviour. The grey contours indicate constant damping ratio and can be used to estimate damping at candidate pole locations.
+
+There are four open-loop poles and two finite zeros, so two branches terminate at the finite zeros and two branches approach infinity. The asymptote centroid is
+
+$$
+\sigma_a=\frac{\sum p_i-\sum z_i}{n-m}
+=\frac{-11.6-0.16667}{2}
+\approx -5.8833,
+$$
+
+with asymptote angles $+90^\circ$ and $-90^\circ$.
+
+The right-half-plane zero is an important limitation: one root-locus branch approaches this zero as gain becomes large. Therefore, increasing gain indefinitely cannot be assumed to preserve closed-loop stability.
+
+### 11.3 Design implications
+
+The assignment specifies a Dutch-roll damping target of $\zeta_{dr}\geq0.4$. A candidate gain must be selected by checking the actual closed-loop poles and damping ratios, not by visual inspection of the root-locus plot alone. The feedback sign must also be justified from the chosen signal convention and the signs of the plant and servo transfer functions.
+
+The root-locus plot is a linear analysis. Rudder saturation is not represented by the root locus and must be checked separately in time-domain simulation.
+
+### 11.4 Status of work
+
+Completed in this update:
+
+1. Combined the aircraft plant, servo, and washout filter for an initial washout time constant of $2\ \text{s}$.
+2. Generated the compensated open-loop root-locus plot.
+3. Identified the four open-loop poles and two finite zeros.
+4. Interpreted the real and imaginary axes, damping-ratio contours, and asymptotes.
+
+Not yet completed: selecting the feedback sign and gain, verifying closed-loop damping and stability, and running closed-loop time-domain simulations with rudder limits.
+
 The compensated open-loop system will then be analysed using root-locus methods to select a suitable feedback gain. Closed-loop poles, damping ratio, time-domain responses, and rudder saturation will subsequently be evaluated in MATLAB and Simulink against the assignment requirements.
 
 At this stage, no closed-loop controller has been designed or validated. The results presented here constitute the open-loop baseline for the subsequent yaw-damper design.
