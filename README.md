@@ -419,6 +419,103 @@ Completed in this update:
 
 Not yet completed: selecting the feedback sign and gain, verifying closed-loop damping and stability, and running closed-loop time-domain simulations with rudder limits.
 
+## Update 3 — Work done on 20 October 2026: Closed-Loop Gain Sweep
+
+### 11. Purpose
+
+The compensated open-loop model was evaluated using MATLAB's standard negative-feedback convention to investigate how the scalar feedback gain \(K\) affects closed-loop pole locations and damping. The washout-filter time constant was fixed at \(\tau=2\ \text{s}\) for this initial comparison.
+
+The compensated open-loop transfer function, excluding \(K\), is
+
+$$
+L_0(s)=P(s)G_s(s)H_w(s)
+$$
+
+where
+
+$$
+P(s)=\frac{-4.5s+0.75}{s^2+1.1s+4.2},
+\qquad
+G_s(s)=\frac{-10}{s+10},
+\qquad
+H_w(s)=\frac{s}{s+0.5}.
+$$
+
+The closed-loop system for this comparison is
+
+$$
+T(s)=\frac{K L_0(s)}{1+K L_0(s)}.
+$$
+
+This equation describes the standard negative-feedback connection used by `feedback(K*L0,1)` in MATLAB. The physical feedback sign still needs to be justified from the intended signal definitions and controller architecture.
+
+### 12. Compensated Open-Loop Poles and Zeros
+
+MATLAB returned the following compensated open-loop poles:
+
+$$
+s=-10,\quad -0.55\pm j1.9742,\quad -0.5.
+$$
+
+The zeros are
+
+$$
+s=0,\qquad s=+0.1667.
+$$
+
+The poles comprise the servo pole, the aircraft's complex-conjugate pair, and the washout-filter pole. The zero at the origin comes from the washout filter. The positive real zero is inherited from the aircraft plant and is a right-half-plane zero.
+
+### 13. Gain Sweep Results
+
+The following table summarizes the closed-loop pole pair with the smallest magnitude of negative real part for each tested gain. This is the slowest mode in each reported case and is a useful initial indicator of the system's transient behaviour.
+
+| Gain \(K\) | Slowest pole pair | Damping ratio | Status |
+|---:|---|---:|---|
+| 0.10 | \(-0.8010\pm j1.8479\) | 0.398 | Stable; slightly below the target |
+| 0.25 | \(-1.2398\pm j1.4647\) | 0.646 | Stable; meets the numerical damping target |
+| 0.50 | \(-0.6647\pm j0.5344\) | 0.779 | Stable; meets the numerical damping target |
+| 1.00 | \(-0.3277\pm j0.5033\) | 0.546 | Stable; meets the numerical damping target |
+| 2.00 | \(-0.1511\pm j0.4161\) | 0.341 | Stable; below the target |
+| 5.00 | \(-0.0227\pm j0.2918\) | 0.077 | Stable; below the target |
+
+All four poles in each tested case had negative real parts, so every tested closed-loop linear model was stable under the assumed feedback convention.
+
+The results show that the damping ratio does not increase monotonically with gain. From \(K=0.1\) to \(K=0.25\), the slowest complex pair moves farther into the left half-plane and its damping ratio increases. At higher gains, the slowest pair moves closer to the imaginary axis and its damping ratio decreases. For example, at \(K=5\), the pair at approximately \(-0.0227\pm j0.2918\) is very lightly damped despite remaining mathematically stable.
+
+At \(K=0.5\), the four poles form two complex-conjugate pairs. The slower pair has a damping ratio of approximately 0.779, while the faster pair at approximately \(-5.1353\pm j1.5803\) has a damping ratio of approximately 0.956. These modes must be considered together when interpreting the complete response.
+
+### 14. Preliminary Interpretation
+
+The numerical sweep identifies \(K=0.25\) as a promising candidate for further investigation: its slowest pole pair has a damping ratio of approximately 0.646 and a real part of approximately \(-1.24\), indicating faster decay than the slowest pair at \(K=0.5\). This is not yet a final gain selection.
+
+A final choice cannot be made from pole damping alone. The next checks must include the time-domain yaw-rate response, rudder command and saturation, the response to the specified step and pulse inputs, and verification that the feedback sign matches the intended physical yaw-damper action. The relevant Dutch-roll mode must also be identified consistently as the gain changes.
+
+### 15. MATLAB Commands Used
+
+```matlab
+K_values = [0.1 0.25 0.5 1 2 5];
+
+for K = K_values
+    T = feedback(K*L0, 1);
+
+    fprintf('\\nK = %.2f\\n', K);
+    disp('Closed-loop poles:');
+    disp(pole(T));
+
+    disp('Damping ratios and natural frequencies:');
+    damp(T);
+end
+```
+
+### 16. Work Status and Next Steps
+
+Completed in this update:
+
+1. Calculated the compensated open-loop poles and zeros.
+2. Evaluated the closed-loop poles for six positive gain values using standard negative feedback.
+3. Compared damping ratios and stability across the gain sweep.
+4. Identified \(K=0.25\) as a candidate for further time-domain testing, not as the final design.
+
 The compensated open-loop system will then be analysed using root-locus methods to select a suitable feedback gain. Closed-loop poles, damping ratio, time-domain responses, and rudder saturation will subsequently be evaluated in MATLAB and Simulink against the assignment requirements.
 
 At this stage, no closed-loop controller has been designed or validated. The results presented here constitute the open-loop baseline for the subsequent yaw-damper design.
