@@ -573,3 +573,73 @@ $$
 $$
 
 This expression assumes the stated block arrangement and standard negative feedback. The physical sign must still be confirmed against the assignment's signal definitions and rudder direction. The resulting command response must be checked before drawing conclusions about the actual rudder-step test.
+
+
+## Update 5 — Work done on 20 October 2026: Command-to-Yaw-Rate Response
+
+### 21. Model and Simulation
+
+The washout filter was placed in the yaw-rate feedback path, while the rudder command entered the forward path through the servo and aircraft plant. The simulated command-to-yaw-rate transfer function, using the assumed standard negative-feedback convention, was
+
+$$
+T_{\mathrm{cmd}}(s)=
+\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
+$$
+
+For this run, $K=0.25$ and $\tau=2\ \text{s}$. The response was simulated over 20 seconds using MATLAB's `step` function.
+
+### 22. Response Observations
+
+The plotted response initially rises to approximately 1.13, then crosses zero and reaches a negative minimum of approximately $-0.38$. It subsequently approaches a negative steady-state value near $-0.18$.
+
+This is a transient inverse response followed by a nonzero steady-state output. The initial positive excursion and subsequent negative settling value are consistent with the supplied plant's right-half-plane zero and the negative DC gain of the servo.
+
+The plot is a unit-step response of the linear command-to-yaw-rate transfer function. It does not yet represent the assignment's specified $1^\circ$ rudder-step test with actuator saturation.
+
+### 23. Analytical Steady-State Verification
+
+The final value can be obtained using the final value theorem:
+
+$$
+r(\infty)=\lim_{s\to0}sR(s)=\lim_{s\to0}T_{\mathrm{cmd}}(s)
+$$
+
+provided the closed-loop system is stable.
+
+Since the washout filter is
+
+$$
+H_w(s)=\frac{s}{s+1/\tau},
+$$
+
+its DC gain is zero:
+
+$$
+H_w(0)=0.
+$$
+
+Therefore, the feedback term vanishes at DC, and
+
+$$
+T_{\mathrm{cmd}}(0)=P(0)G_s(0).
+$$
+
+The aircraft plant has DC gain
+
+$$
+P(0)=\frac{0.75}{4.2}=0.17857,
+$$
+
+while the servo has DC gain
+
+$$
+G_s(0)=\frac{-10}{10}=-1.
+$$
+
+Thus,
+
+$$
+\boxed{T_{\mathrm{cmd}}(0)=-0.17857}.
+$$
+
+The calculated final value agrees with the plotted response. The negative sign follows from the specified servo transfer function. Its interpretation as a physical rudder direction depends on the signal definitions and sign convention.
