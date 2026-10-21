@@ -1,6 +1,6 @@
 # Yaw Damper Design for Level I Dutch-Roll Flying Qualities
 
-**Course project:** Flight Dynamics / Flight Dynamics and Control  
+**Course project:** Flight Dynamics / Control Engineering
 **Tools:** MATLAB Control System Toolbox and Simulink  
 **Design candidate:** yaw-damper gain ($K_1=0.25$), washout time constant ($\tau=2 \mathrm{s}$)
 
@@ -96,37 +96,27 @@ title('Root Locus Without Washout Filter');
 
 In this configuration, the complex pair becomes more damped over the listed gains, and all listed poles remain in the left half-plane. This is a comparison of the servo-plus-aircraft feedback loop without washout, not the final yaw-damper design. It should not be confused with the earlier preliminary plant-only root locus, which used a different loop and therefore gave different poles.
 
-## 4. Root Locus With the Washout Filter and Full-Loop Gain Selection
+## 4. Full Yaw-Damper Root-Locus Analysis & Gain Selection
 
-The design root locus includes the aircraft, servo, and washout filter in the feedback path:
+The design root locus includes the aircraft plant, rudder servo, and washout filter evaluated together in the feedback loop:
 
 $$ L(s)=G_s(s)P(s)H_w(s), \qquad T(s)=\frac{G_s(s)P(s)}{1+K_1G_s(s)P(s)H_w(s)} $$
 
-The washout filter makes the feedback frequency-dependent and rejects constant yaw-rate components at steady state. MATLAB's root-locus plot and closed-loop pole sweep were used to evaluate the effect of $K_1$. The selected gain is then validated using the full-loop model, not the plant-only preliminary configuration. The corresponding MATLAB setup is:
+The washout filter makes the feedback frequency-dependent, allowing the system to reject constant yaw-rate components at steady state. A root-locus plot and closed-loop pole sweep were used to evaluate how the yaw-damper gain ($K_1$) affects closed-loop pole locations, system stability, and Dutch-roll damping.
 
 ```matlab
 Hw = s/(s + 0.5);
 L_full = Gs*P*Hw;
+
 figure;
 rlocus(L_full);
 grid on;
-title('Full Yaw-Damper Root Locus With Washout Filter');
-
-K1 = 0.25;
-T_yaw = feedback(Gs*P, K1*Hw);
-damp(T_yaw);
-pole(T_yaw);
+title('Full Yaw-Damper Root Locus');
 ```
 
-## 5. Full Yaw-Damper Root-Locus Analysis
+*(Insert image `image_c083f4.png` here)*
 
-The root locus was analysed with the aircraft transfer function, servo dynamics, and washout filter included in the feedback loop. The purpose was to determine how the yaw-damper gain ($K_1$) affects closed-loop pole locations, system stability, and Dutch-roll damping.
-
-The root-locus plot shows how the closed-loop poles move as the gain increases. MATLAB was used to calculate the closed-loop poles, damping ratios, natural frequencies, and time constants at selected gain values.
-
-## 6. Closed-Loop Pole and Damping Results
-
-The following results were obtained for the full yaw-damper configuration.
+The following closed-loop poles, damping ratios ($\zeta$), and natural frequencies were obtained across a sweep of $K_1$. The table reports the complex-conjugate pair associated with the Dutch-roll response at each gain. 
 
 | Gain ($K_1$) | Dutch-roll poles | Dutch-roll damping ratio ($\zeta$) | Stable? | Meets ($\zeta \geq 0.4$)? |
 | :--- | :--- | :--- | :--- | :--- |
@@ -139,9 +129,9 @@ The following results were obtained for the full yaw-damper configuration.
 | 0.400 | -0.9143 $\pm$ j0.4727 | 0.888 | Yes | Yes |
 | 0.500 | -0.6647 $\pm$ j0.5344 | 0.779 | Yes | Yes |
 
-The full system has four closed-loop poles. The table reports the complex-conjugate pair associated with the Dutch-roll response at each gain. At $K_1=0.50$, a second complex-conjugate pair is also present at approximately $-5.1353 \pm j1.5803$, with a damping ratio of $0.956$.
+*Note: The full system contains four closed-loop poles. All tested gain values resulted strictly in left half-plane poles, ensuring stability. At $K_1=0.50$, a second complex-conjugate pair emerges at approximately $-5.1353 \pm j1.5803$ with a damping ratio of $0.956$.*
 
-## 7. Interpretation of the Root-Locus Results
+## 5. Interpretation of the Root-Locus Results
 
 At low gains, the Dutch-roll damping ratio remains below the assignment's minimum requirement of $0.4$. At $K_1=0.10$, the damping ratio is $0.398$, which is close to, but still below, the required value.
 
@@ -149,7 +139,7 @@ Increasing the gain to $K_1=0.15$ raises the damping ratio to $0.471$. Further i
 
 All the tested gain values in this full-loop analysis have closed-loop poles with negative real parts. Therefore, the closed-loop system is stable at each tested gain.
 
-## 8. Candidate Yaw-Damper Gain
+## 6. Candidate Yaw-Damper Gain
 
 The gain $K_1=0.25$ was selected as an initial candidate for further validation.
 
@@ -163,7 +153,7 @@ $$ \zeta=0.646 $$
 
 This exceeds the assignment's minimum damping requirement of $0.4$. The other two closed-loop poles are located at approximately $-0.6753$ and $-8.4451$, so all four poles lie in the left half-plane.
 
-## 9. Closed-Loop Yaw-Rate Step Response
+## 7. Closed-Loop Yaw-Rate Step Response
 
 A unit-step response was evaluated in MATLAB for the full yaw-damper configuration using the selected gain ($K_1=0.25$). The closed-loop transfer function was defined as:
 
@@ -178,7 +168,7 @@ $$ T_{\mathrm{yaw}}(s) = \frac{G_s(s)P(s)}{1+K_1G_s(s)H_w(s)P(s)} $$
 
 All four poles have negative real parts, confirming that the closed-loop system is stable for the selected gain. The Dutch-roll pole pair has a damping ratio of $0.646$, exceeding the assignment requirement of $\zeta \geq 0.4$.
 
-## 10. Step-Response Characteristics
+## 8. Step-Response Characteristics
 
 | Parameter | MATLAB result |
 | :--- | :--- |
@@ -192,11 +182,11 @@ All four poles have negative real parts, confirming that the closed-loop system 
 | Peak value | 1.1291 |
 | Peak time | 0.6544 s |
 
-## 11. Interpretation and Design Status
+## 9. Interpretation and Design Status
 
 The selected gain $K_1=0.25$ satisfies the Dutch-roll damping requirement in the linear closed-loop pole analysis. The step-response analysis also confirms stability and provides quantitative measures of the transient behaviour.
 
-## 12. Simulink Validation of the Closed-Loop Yaw-Rate Response
+## 10. Simulink Validation of the Closed-Loop Yaw-Rate Response
 
 The closed-loop yaw-damper configuration was simulated in Simulink using the selected gain ($K_1=0.25$).
 
@@ -209,11 +199,11 @@ The closed-loop yaw-damper configuration was simulated in Simulink using the sel
 | Time of minimum yaw rate (s) | Approx 2.65--2.75 | 2.7290 |
 | Settling time (s) | 7.5360 | Not calculated |
 
-## 13. MATLAB–Simulink Comparison and Conclusion
+## 11. MATLAB–Simulink Comparison and Conclusion
 
 The comparison demonstrates close agreement between the MATLAB transfer-function model and the Simulink implementation for the selected gain and unit-step input.
 
-## 14. Simulink Settling-Time Verification
+## 12. Simulink Settling-Time Verification
 
 The settling time of the closed-loop yaw-rate response was calculated from the logged Simulink output using MATLAB. A 2% settling band was defined around the final simulated yaw-rate value.
 
@@ -228,17 +218,17 @@ $$ -0.182144 \leq y(t) \leq -0.175001 $$
 | Final yaw rate | -0.178572 | -0.178572 |
 | 2% settling time | 7.5360 s | 7.8979 s |
 
-## 15. Closed-Loop Validation Summary
+## 13. Closed-Loop Validation Summary
 
 For the selected yaw-damper gain ($K_1=0.25$), the full closed-loop pole analysis gives a Dutch-roll damping ratio of $0.646$.
 
-## 16. Effect of Washout Time Constant on Dutch-Roll Damping
+## 14. Effect of Washout Time Constant on Dutch-Roll Damping
 
 A parametric sweep was performed in MATLAB with the yaw-damper gain held constant at $K_1=0.25$, while the washout time constant was varied from $1$ to $4$ seconds.
 
 $$ H_w(s)=\frac{s}{s+1/\tau} $$
 
-#### 16.1 Results of the Time-Constant Sweep
+#### 14.1 Results of the Time-Constant Sweep
 
 | Washout time constant, $\tau$ (s) | Dutch-roll damping ratio, $\zeta$ | Natural frequency (rad/s) | Steady-state yaw rate |
 | :--- | :--- | :--- | :--- |
@@ -247,17 +237,17 @@ $$ H_w(s)=\frac{s}{s+1/\tau} $$
 | 3 | 0.62826 | 2.0271 | -0.17857 |
 | 4 | 0.61806 | 2.0695 | -0.17857 |
 
-#### 16.2 Effect on Dutch-Roll Damping
+#### 14.2 Effect on Dutch-Roll Damping
 The results show that the damping ratio does not increase monotonically with the washout time constant. 
 
-#### 16.3 Effect on Steady-State Yaw Rate
+#### 14.3 Effect on Steady-State Yaw Rate
 The steady-state yaw rate remains approximately $-0.17857$ for every tested time constant, consistent with the washout filter's zero DC gain ($H_w(0)=0$).
 
-## 17. Closed-Loop Yaw-Damper Performance: Damper OFF vs ON
+## 15. Closed-Loop Yaw-Damper Performance: Damper OFF vs ON
 
 The selected yaw-damper parameters were $K_1=0.25, \qquad \tau=2 \text{s}$.
 
-#### 17.1 Simulation Results
+#### 15.1 Simulation Results
 
 | Performance parameter | Damper OFF | Damper ON |
 | :--- | :--- | :--- |
@@ -271,19 +261,19 @@ The selected yaw-damper parameters were $K_1=0.25, \qquad \tau=2 \text{s}$.
 | Simulated final yaw rate | -0.178531 | -0.178572 |
 | 2% settling time (s) | 10.887 | 7.537 |
 
-#### 17.2 Closed-Loop Pole Analysis
+#### 15.2 Closed-Loop Pole Analysis
 
 **Damper OFF:**
-$$ s_{1,2}=-0.55 \pm j1.9742, \qquad s_3=-10 $$
+$s_{1,2} = -0.55 \pm j1.9742$,  $s_3 = -10$
 
 **Damper ON:**
-$$ s_{1,2}=-1.2398 \pm j1.4647 $$
-$$ s_3=-0.6753 $$
-$$ s_4=-8.4451 $$
+$s_{1,2} = -1.2398 \pm j1.4647$
+$s_3 = -0.6753$
+$s_4 = -8.4451$
 
-## 18. Pulse-Response Comparison: Yaw Damper OFF vs ON
+## 16. Pulse-Response Comparison: Yaw Damper OFF vs ON
 
-#### 18.1 Simulation Results
+#### 16.1 Simulation Results
 
 | Performance parameter | Damper OFF | Damper ON |
 | :--- | :--- | :--- |
@@ -294,9 +284,9 @@ $$ s_4=-8.4451 $$
 | Final yaw rate | 0.000124 | 0.000001 |
 | 2% settling time (s) | 8.745 | 5.255 |
 
-## 19. Steady-Turn and Washout-Filter Verification
+## 17. Steady-Turn and Washout-Filter Verification
 
-#### 19.1 Simulation Results
+#### 17.1 Simulation Results
 
 | Parameter | Result |
 | :--- | :--- |
@@ -309,9 +299,9 @@ $$ s_4=-8.4451 $$
 | Theoretical DC gain | 0 |
 | Theoretical steady-state output | 0 |
 
-## 20. Simulink Verification: Damper OFF vs ON
+## 18. Simulink Verification: Damper OFF vs ON
 
-### 20.1 Damper-OFF Simulation Results
+### 18.1 Damper-OFF Simulation Results
 
 | Performance parameter | Damper OFF — Simulink |
 | :--- | :--- |
@@ -322,7 +312,7 @@ $$ s_4=-8.4451 $$
 | Final yaw rate | -0.178184 |
 | 2% settling time (s) | 11.0127 |
 
-### 20.2 Simulink Comparison: Damper OFF vs ON
+### 18.2 Simulink Comparison: Damper OFF vs ON
 
 | Performance parameter | Damper OFF | Damper ON |
 | :--- | :--- | :--- |
@@ -333,22 +323,22 @@ $$ s_4=-8.4451 $$
 | Final yaw rate | -0.178184 | -0.178572 |
 | 2% settling time (s) | 11.0127 | 7.8979 |
 
-## 21. MIL-F-8785C Level I Dutch-Roll Assessment
+## 19. MIL-F-8785C Level I Dutch-Roll Assessment
 
-### 21.1 Assumed Aircraft Class and Flight Category
+### 19.1 Assumed Aircraft Class and Flight Category
 
 For this design study, the aircraft is assumed to be **Class IV, Category A**. MIL-F-8785C Table VI specifies:
 - Minimum Dutch-roll damping ratio: $\zeta_{dr} \geq 0.4$
 - Minimum undamped natural frequency: $\omega_{nd} \geq 1.0 \mathrm{rad/s}$
 
-### 21.2 Open-Loop Assessment
+### 19.2 Open-Loop Assessment
 
 | Parameter | Open-loop result | Level I requirement | Result |
 | :--- | :--- | :--- | :--- |
 | Damping ratio ($\zeta_{dr}$) | 0.2684 | $\geq 0.4$ | Fail |
 | Undamped natural freq ($\omega_{nd}$) | 2.0494 rad/s | $\geq 1.0$ rad/s | Pass |
 
-### 21.3 Closed-Loop Assessment with the Selected Yaw Damper
+### 19.3 Closed-Loop Assessment with the Selected Yaw Damper
 
 | Parameter | Closed-loop result | Level I requirement | Result |
 | :--- | :--- | :--- | :--- |
