@@ -866,3 +866,44 @@ The washout-filter output shows a transient, including a negative excursion of a
 ### 45. Pulse-Test Conclusion
 
 The pulse generator produces the intended input, and the signals in the servo, aircraft, and washout stages show transient behaviour that decays after the pulse. The rudder signal does not approach the \(\pm20\) saturation limits in this test; therefore, this run does not demonstrate active saturation. The observed peaks and minima are approximate readings from Scope plots, not exact measurements extracted from logged simulation data.
+
+
+## Update 10 — 21 October 2026: Logged Simulink Step-Response Metrics
+
+### 46. Logging the Aircraft Yaw-Rate Signal
+
+A `To Workspace` block was connected to the aircraft yaw-rate signal at the output of the Aircraft transfer-function block, before the washout filter. The signal was logged as a `Timeseries` under the variable name `yaw_rate`. The simulation was run for 20 seconds, and a MATLAB script retrieved the logged signal from the simulation output object and extracted its time and data arrays.
+
+The metrics were calculated from the logged simulation data rather than estimated from the Scope plots. The measured values for this run are:
+
+| Metric | Simulink result |
+|---|---:|
+| Final yaw rate | -0.178572 |
+| Maximum yaw rate | 1.112467 |
+| Time of maximum yaw rate | 0.7330 s |
+| Minimum yaw rate | -0.374355 |
+| Time of minimum yaw rate | 2.7290 s |
+| Approximate 2% settling time | 7.8979 s |
+| Simulation duration | 20 s |
+
+### 47. MATLAB–Simulink Peak Comparison
+
+The earlier MATLAB transfer-function analysis reported a maximum yaw rate of 1.1291 and a minimum of -0.3761. The logged Simulink values differ by approximately 1.47% for the positive maximum and 0.46% in the magnitude of the negative minimum.
+
+| Metric | MATLAB | Simulink | Difference in magnitude |
+|---|---:|---:|---:|
+| Maximum yaw rate | 1.1291 | 1.112467 | 1.47% |
+| Minimum yaw rate | -0.3761 | -0.374355 | 0.46% |
+| Steady-state output | -0.17857 | -0.178572 | Approximately 0.001% |
+
+The close agreement supports consistency between the MATLAB and Simulink models for this input, parameter set, and signal scaling. It does not by itself validate the physical feedback sign or establish compliance with all assignment criteria.
+
+### 48. Settling-Time Definition and Limitation
+
+The script defines the final value as the last logged sample and calculates a 2% band using 2% of the absolute value of that final sample. With the measured final value of -0.178572, the tolerance is approximately 0.003571, giving a band of approximately -0.182143 to -0.175001. The reported settling time of 7.8979 s is the first logged time after the last sample outside this band.
+
+This is a settling time relative to the measured nonzero final value, not a settling time relative to zero. Because the script uses the final simulation sample as its reference, the value should be described as an approximate settling time for the 20-second run rather than an independently verified theoretical settling time.
+
+### 49. Conclusion
+
+The logged step-response data provide numerical peak, peak-time, final-value, and settling-time metrics for the aircraft yaw-rate output before the washout filter. The extrema and steady-state value closely match the earlier MATLAB results. Together with the separate pulse and saturation tests documented above, this completes the current set of recorded Simulink checks.
