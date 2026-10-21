@@ -94,7 +94,10 @@ grid on;
 title('Root Locus Without Washout Filter');
 ```
 
-In this configuration, the complex pair becomes more damped over the listed gains, and all listed poles remain in the left half-plane. This is a comparison of the servo-plus-aircraft feedback loop without washout, not the final yaw-damper design. It should not be confused with the earlier preliminary plant-only root locus, which used a different loop and therefore gave different poles.
+In this configuration, the complex pair becomes more damped over the listed gains, and all listed poles remain in the left half-plane. 
+
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/3.%20Root%20locus%20without%20washout%20filter.png)
+<small>*Figure 1: Root locus without including washout filter*</small>  
 
 ## 4. Full Yaw-Damper Root-Locus Analysis & Gain Selection
 
@@ -114,7 +117,7 @@ grid on;
 title('Full Yaw-Damper Root Locus');
 ```
 
-*(Insert image `image_c083f4.png` here)*
+
 
 The following closed-loop poles, damping ratios ($\zeta$), and natural frequencies were obtained across a sweep of $K_1$. The table reports the complex-conjugate pair associated with the Dutch-roll response at each gain. 
 
@@ -129,7 +132,8 @@ The following closed-loop poles, damping ratios ($\zeta$), and natural frequenci
 | 0.400 | -0.9143 $\pm$ j0.4727 | 0.888 | Yes | Yes |
 | 0.500 | -0.6647 $\pm$ j0.5344 | 0.779 | Yes | Yes |
 
-*Note: The full system contains four closed-loop poles. All tested gain values resulted strictly in left half-plane poles, ensuring stability. At $K_1=0.50$, a second complex-conjugate pair emerges at approximately $-5.1353 \pm j1.5803$ with a damping ratio of $0.956$.*
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/4.%20Full%20yaw%20damper%20root%20locus%20(with%20filter).png)
+<small>*Figure 2: Full Yaw-Damper root locus*</small>
 
 ## 5. Interpretation of the Root-Locus Results
 
@@ -182,6 +186,9 @@ All four poles have negative real parts, confirming that the closed-loop system 
 | Peak value | 1.1291 |
 | Peak time | 0.6544 s |
 
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/8.%20Closed%20loop%20yaw%20rate%20response.png)
+<small>*Figure 3: Closed loop yaw rate response*</small>
+
 ## 9. Interpretation and Design Status
 
 The selected gain $K_1=0.25$ satisfies the Dutch-roll damping requirement in the linear closed-loop pole analysis. The step-response analysis also confirms stability and provides quantitative measures of the transient behaviour.
@@ -198,6 +205,13 @@ The closed-loop yaw-damper configuration was simulated in Simulink using the sel
 | Minimum yaw rate | -0.3761 | -0.374355 |
 | Time of minimum yaw rate (s) | Approx 2.65--2.75 | 2.7290 |
 | Settling time (s) | 7.5360 | Not calculated |
+
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/10.0%20Simulink%20Set%20up.png)
+<small>*Figure 4: Simulink Set Up for conducting verification tests*</small>
+
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/10.%20Closed%20loop%20yaw%20rate%20response%20(Simulink)%20(Basically%20Damper%20on).png)
+<small>*Figure 5: Closed loop yaw rate response from Simulink scope (Damper ON)*</small>
+
 
 ## 11. MATLAB–Simulink Comparison and Conclusion
 
@@ -261,6 +275,9 @@ The selected yaw-damper parameters were $K_1=0.25, \qquad \tau=2 \text{s}$.
 | Simulated final yaw rate | -0.178531 | -0.178572 |
 | 2% settling time (s) | 10.887 | 7.537 |
 
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/15.%20Unit%20step%20Damper%20response%20on%20vs%20off.png)
+<small>*Figure 6: Matlab Yaw rate response for Unit Step Input with Damper ON and OFF*</small>
+
 #### 15.2 Closed-Loop Pole Analysis
 
 **Damper OFF:**
@@ -284,6 +301,9 @@ $s_4 = -8.4451$
 | Final yaw rate | 0.000124 | 0.000001 |
 | 2% settling time (s) | 8.745 | 5.255 |
 
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/16.%20Pulse%20Damper%20response%20on%20vs%20off.png)
+<small>*Figure 7: Matlab Yaw rate response for Pulse Input with Damper ON and OFF*</small>
+
 ## 17. Steady-Turn and Washout-Filter Verification
 
 #### 17.1 Simulation Results
@@ -298,6 +318,9 @@ $s_4 = -8.4451$
 | Filter output at $t=20 \text{s}$ | 0.00004540 |
 | Theoretical DC gain | 0 |
 | Theoretical steady-state output | 0 |
+
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/17.%20Washout%20filter%20response.png)
+<small>*Figure 8: Simulink Washout Filter Response*</small>
 
 ## 18. Simulink Verification: Damper OFF vs ON
 
@@ -323,6 +346,9 @@ $s_4 = -8.4451$
 | Final yaw rate | -0.178184 | -0.178572 |
 | 2% settling time (s) | 11.0127 | 7.8979 |
 
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/18.%20Simulink%20Damper%20off%20(K%3D0)%20unit%20step%20response.png)
+<small>*Figure 9: Simulink yaw rate response with Damper OFF*</small>
+
 ## 19. MIL-F-8785C Level I Dutch-Roll Assessment
 
 ### 19.1 Assumed Aircraft Class and Flight Category
@@ -344,3 +370,6 @@ For this design study, the aircraft is assumed to be **Class IV, Category A**. M
 | :--- | :--- | :--- | :--- |
 | Damping ratio ($\zeta_{dr}$) | 0.6461 | $\geq 0.4$ | Pass |
 | Undamped natural freq ($\omega_{nd}$) | 1.9189 rad/s | $\geq 1.0$ rad/s | Pass |
+
+![image alt](https://github.com/grim-reaper-original/Flight-Dynamics-7th-Sem-EL-Project/blob/3826e59b1e7ca15f96c4dbd44800cba40eee5bf0/19.%20Relevant%20MIL-F-8785C%20Section%20(Table%20VI).png)
+<small>*Figure 10: Table VI from MIL-F-8785C document*</small>
