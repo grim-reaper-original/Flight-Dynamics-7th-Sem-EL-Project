@@ -717,3 +717,55 @@ The response is consistent with the pole and DC-gain calculations. However, the 
 
 For $K=0.25$ and $\tau=2\ \text{s}$, the linear command-response model is stable and its complex pole pair has a damping ratio above 0.4. This makes the parameter set a candidate for the next verification stage, not a finalized design.
 
+
+## Update 7 — Work done on 21 October 2026: Step and Pulse Response Tests
+
+### 29. Test Setup
+
+The command-to-yaw-rate model was tested using two input signals with the candidate parameters
+
+$$
+K=0.25,\qquad \tau=2\ \text{s}.
+$$
+
+The command-to-yaw-rate transfer function was
+
+$$
+T_{\mathrm{cmd}}(s)=\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
+$$
+
+The first input was a sustained unit step corresponding to a 1-degree rudder-command step. The second input was a 2-degree pulse applied from 0 to 1 second, followed by zero command. Both responses were simulated over 20 seconds using MATLAB's `lsim` function. These were linear simulations without actuator saturation.
+
+### 30. Numerical Results
+
+| Metric | 1-degree step | 2-degree, 1-second pulse |
+|---|---:|---:|
+| Maximum response | 1.1291 | 2.2581 |
+| Minimum response | -0.3761 | -2.3074 |
+| Long-time response | Approximately -0.1786 | Approaches 0 |
+
+The values are reported in the output units implied by the supplied transfer function. They should not be labelled as degrees per second unless the assignment defines the plant output in those units.
+
+### 31. Step-Response Interpretation
+
+For the 1-degree step, the response rises to approximately 1.1291, then undershoots to approximately -0.3761 before approaching a steady value near -0.1786.
+
+This steady-state value agrees with the previously calculated DC gain:
+
+$$
+T_{\mathrm{cmd}}(0)=P(0)G_s(0)=-0.17857,
+$$
+
+because the washout filter has zero DC gain and therefore contributes no steady-state feedback. The initial positive excursion followed by a negative steady-state value is consistent with the right-half-plane zero in the aircraft plant and the negative DC gain of the specified servo model.
+
+### 32. Pulse-Response Interpretation
+
+The 2-degree command pulse is present for the first second and is zero thereafter. The response reaches approximately 2.2581 and a minimum of approximately -2.3074, then decays towards zero.
+
+Since the command is removed after one second, the remaining response is the transient response of the closed-loop linear model. Its decay towards zero is consistent with the stable poles obtained for the selected parameter set.
+
+### 33. Limitations and Next Steps
+
+These tests characterize the linear command-to-yaw-rate model. They do not establish actuator compliance because the rudder saturation limit has not yet been included. The feedback sign and signal directions must also be confirmed against the assignment's physical definitions before the candidate is treated as a final design.
+
+The next stage is to implement the controller in Simulink, include the specified rudder saturation limit of \(\pm20^\circ\), and compare the commanded rudder signal with the saturated actuator output. The saturated response should then be compared with the linear predictions to determine whether actuator limiting materially changes the yaw-rate response.
