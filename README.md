@@ -769,3 +769,58 @@ Since the command is removed after one second, the remaining response is the tra
 These tests characterize the linear command-to-yaw-rate model. They do not establish actuator compliance because the rudder saturation limit has not yet been included. The feedback sign and signal directions must also be confirmed against the assignment's physical definitions before the candidate is treated as a final design.
 
 The next stage is to implement the controller in Simulink, include the specified rudder saturation limit of \(\pm20^\circ\), and compare the commanded rudder signal with the saturated actuator output. The saturated response should then be compared with the linear predictions to determine whether actuator limiting materially changes the yaw-rate response.
+
+
+## Update 8 — Work done on 21 October 2026: Simulink Scope Verification
+
+### 34. Simulink Configuration
+
+The Simulink model uses a step command, a negative-gain servo, a saturation block with limits of \(+20\) and \(-20\), the aircraft transfer function, a washout filter with \(\tau=2\ \text{s}\), and a feedback gain of \(K=0.25\). The Sum block is configured for command minus feedback.
+
+The four scopes monitor the signal entering the servo, the servo output before saturation, the aircraft output before the washout filter, and the washout-filter output, respectively.
+
+### 35. Scope 1 — Signal Entering the Servo
+
+The signal begins at approximately 1, temporarily decreases to approximately 0.765, rises to approximately 1.136, and settles at 1. This behaviour is consistent with a feedback-corrected command: the washout feedback modifies the command during the transient, then approaches zero so the servo input returns to the original step value.
+
+### 36. Scope 2 — Servo Output Before Saturation
+
+The servo output has a transient negative excursion, with a minimum of approximately \(-1.14\), and settles near \(-1\). This is consistent with the servo's DC gain:
+
+$$
+G_s(0)=\frac{-10}{10}=-1.
+$$
+
+The observed servo output remains within the saturation limits of \(\pm20\). Therefore, the saturation block does not activate during this \(1^\circ\) step test.
+
+### 37. Scope 3 — Aircraft Yaw-Rate Output
+
+The aircraft output reaches approximately \(+1.13\), undershoots to approximately \(-0.38\), and settles near \(-0.18\). These results agree closely with the MATLAB linear command-to-yaw-rate simulation:
+
+| Metric | MATLAB | Simulink plot, approximate |
+|---|---:|---:|
+| Maximum output | 1.1291 | 1.13 |
+| Minimum output | -0.3761 | -0.38 |
+| Steady-state output | -0.17857 | -0.18 |
+
+The close agreement supports consistency between the MATLAB and Simulink models for this input, parameter set, and signal scaling. It does not by itself validate the physical feedback sign or establish compliance with all assignment criteria.
+
+### 38. Scope 4 — Washout-Filter Output
+
+The washout-filter output shows a transient response that decays towards zero. The washout transfer function is
+
+$$
+H_w(s)=\frac{s}{s+0.5},
+$$
+
+which has zero DC gain:
+
+$$
+H_w(0)=0.
+$$
+
+Thus, the filter passes transient changes while removing the steady-state component from the yaw-rate feedback signal. As the filtered signal approaches zero, the feedback correction to the servo input also disappears.
+
+### 39. Saturation Verification Status
+
+The saturation limits are configured as \(+20\) and \(-20\), assuming the actuator signal is in degrees. In the \(1^\circ\) step test, the servo output remains approximately between \(-1.14\) and 0, so the saturation block is inactive. This test verifies that the block does not disturb the response when the actuator command is within limits; it does not demonstrate limiting behaviour at the boundaries.
