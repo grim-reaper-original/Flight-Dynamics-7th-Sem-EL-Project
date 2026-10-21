@@ -1,909 +1,356 @@
-# Flight-Dynamics-7th-Sem-EL-Project
-
 # Yaw Damper Design for Level I Dutch-Roll Flying Qualities
 
-## 1. Objective
+**Course project:** Flight Dynamics / Flight Dynamics and Control  
+**Tools:** MATLAB Control System Toolbox and Simulink  
+**Design candidate:** yaw-damper gain ($K_1=0.25$), washout time constant ($\tau=2 \mathrm{s}$)
 
-The objective of this study is to investigate the open-loop yaw-rate dynamics of an aircraft and establish a baseline for the design of a yaw damper to improve Dutch-roll damping. MATLAB is used to model the aircraft dynamics, calculate the system poles and zeros, evaluate its damping characteristics, and analyse its response to a unit-step rudder input.
+## 1. Objective and Scope
 
-The subsequent design stages will incorporate a rudder servo and a washout filter, followed by feedback gain selection using root-locus analysis and verification of the closed-loop response in MATLAB and Simulink.
+The objective is to evaluate the supplied aircraft yaw-rate dynamics, assess the baseline Dutch-roll damping, design a yaw-damper feedback configuration, and verify its behaviour using MATLAB and Simulink. The analysis includes open-loop modal characteristics, root-locus and gain selection, closed-loop poles, step and pulse responses with the damper disabled and enabled, washout time-constant sensitivity, and an explicitly assumption-based MIL-F-8785C modal-criteria assessment.
 
-## 2. Aircraft Yaw-Rate Transfer Function
+The model is linear and transfer-function based. The results establish performance for the specified model and tested inputs; they do not constitute certification of a real aircraft.
 
-The aircraft yaw-rate dynamics are represented by the transfer function supplied in the problem statement:
+## 2. System Models and Open-Loop Characteristics
 
-$$
-G(s)=\\frac{r(s)}{\\delta_r(s)}
-=\\frac{-4.5s+0.75}{s^2+1.1s+4.2}
-$$
+### 2.1 Aircraft, servo, and washout models
 
-where:
+The aircraft yaw-rate plant is:
 
-- $G(s)$ is the aircraft yaw-rate transfer function.
-- $r(s)$ is the Laplace transform of yaw rate.
-- $\\delta_r(s)$ is the Laplace transform of rudder deflection.
-- $s$ is the Laplace-domain complex frequency variable.
+$$ P(s)=\frac{-4.5s+0.75}{s^2+1.1s+4.2} $$
 
-The denominator describes the system's natural modes, while the numerator determines its zeros and influences the transient response.
+The rudder servo is:
 
-The model is implemented in MATLAB using the Control System Toolbox.
+$$ G_s(s)=\frac{-10}{s+10} $$
+
+and the nominal washout filter is:
+
+$$ H_w(s)=\frac{s}{s+0.5}=\frac{s}{s+1/\tau}, \qquad \tau=2 \mathrm{s} $$
+
+For the final yaw-damper configuration, the closed-loop transfer function used in MATLAB is:
+
+$$ T_{\mathrm{on}}(s)=\frac{G_s(s)P(s)}{1+K_1G_s(s)P(s)H_w(s)} $$
+
+implemented as `feedback(Gs*P, K1*Hw)`. With the damper disabled, $T_{\mathrm{off}}(s)=G_s(s)P(s)$. The aircraft plant, servo, and washout filter must be kept distinct when interpreting the different root-locus configurations.
+
+### 2.2 Open-loop poles, zero, and modal parameters
+
+The aircraft denominator is $s^2+1.1s+4.2$, giving poles:
+
+$$ s_{1,2}=-0.55 \pm j1.9742 $$
+
+The plant zero follows from $-4.5s+0.75=0$:
+
+$$ s_z=+0.16667 $$
+
+This right-half-plane zero is associated with non-minimum-phase behaviour and helps explain the inverse response in the plant's step response. The poles have negative real parts, so the plant's natural mode is stable and oscillatory.
+
+Comparing the denominator with $s^2+2\zeta\omega_n s+\omega_n^2$ gives:
+
+$$ \omega_n=\sqrt{4.2}=2.0494 \mathrm{rad/s}, \qquad \zeta=\frac{1.1}{2\sqrt{4.2}}=0.2684 $$
+
+and $\omega_d \approx 1.9742 \mathrm{rad/s}$. The oscillation period is approximately $2\pi/\omega_d=3.18 \mathrm{s}$, and the exponential decay time constant is $1/0.55 \approx 1.82 \mathrm{s}$.
+
+### 2.3 Open-loop step and steady-state check
+
+For a unit-step input, $R(s)=P(s)/s$. The final value theorem gives:
+
+$$ r(\infty)=\lim_{s\to0} sR(s)=P(0)=\frac{0.75}{4.2}=+0.17857 $$
+
+The response contains a decaying oscillatory transient and approaches this positive steady-state value while the input remains applied. The initial inverse-response behaviour is consistent with the right-half-plane zero. This open-loop plant response is a baseline; it is not the same as the servo-plus-aircraft damper-off response, whose DC value is negative because $G_s(0)=-1$.
+
+MATLAB checks can be performed with `pole(P)`, `zero(P)`, `damp(P)`, `dcgain(P)`, and `step(P,20)`.
+
+## 3. Root Locus Without the Washout Filter
+
+To isolate the effect of the washout filter, the no-washout comparison retains both the servo and aircraft plant, and applies the gain in a unity negative-feedback loop:
+
+$$ L_{\mathrm{no\ washout}}(s)=G_s(s)P(s), \qquad T(s)=\frac{K L_{\mathrm{no\ washout}}(s)}{1+K L_{\mathrm{no\ washout}}(s)} $$
+
+For this comparison, the closed-loop characteristic polynomial is:
+
+$$ s^3+11.1s^2+(15.2+45K)s+(42-7.5K)=0 $$
+
+The table gives the poles calculated from this characteristic polynomial for representative gains. The complex-pair damping ratios are calculated from $\zeta=-\Re(s)/|s|$. 
+
+| Gain ($K$) | Closed-loop poles (approx.) | Complex-pair damping ratio | Stability |
+| :--- | :--- | :--- | :--- |
+| 0.05 | -9.7479, -0.6760 $\pm$ j1.9527 | 0.327 | Stable |
+| 0.10 | -9.4811, -0.8095 $\pm$ j1.9224 | 0.388 | Stable |
+| 0.15 | -9.1965, -0.9517 $\pm$ j1.8812 | 0.452 | Stable |
+| 0.20 | -8.8904, -1.1048 $\pm$ j1.8262 | 0.517 | Stable |
+| 0.25 | -8.5569, -1.2715 $\pm$ j1.7528 | 0.588 | Stable |
+| 0.30 | -8.1877, -1.4562 $\pm$ j1.6536 | 0.661 | Stable |
+| 0.40 | -7.2721, -1.9140 $\pm$ j1.3037 | 0.827 | Stable |
+| 0.50 | -5.5455, -3.6804, -1.8741 | No complex pair | Stable |
 
 ```matlab
-clear;
-clc;
-close all;
-
 s = tf('s');
-
 P = (-4.5*s + 0.75)/(s^2 + 1.1*s + 4.2);
-```
-
-The transfer function is continuous-time and linear. The present analysis considers the aircraft plant independently, without the rudder servo, washout filter, feedback controller, or actuator saturation.
-
-## 3. Open-Loop Step Response
-
-The open-loop response is evaluated by applying a unit-step input to the rudder channel.
-
-A unit-step input is defined as
-
-$$
-\\delta_r(t)=1,\\qquad t\\geq 0
-$$
-
-with Laplace transform
-
-$$
-\\Delta_r(s)=\\frac{1}{s}.
-$$
-
-The output in the Laplace domain is therefore
-
-$$
-R(s)=G(s)\\Delta_r(s)
-$$
-
-and hence
-
-$$
-R(s)=
-\\frac{-4.5s+0.75}
-{s(s^2+1.1s+4.2)}.
-$$
-
-The MATLAB simulation is performed using:
-
-```matlab
+Gs = -10/(s + 10);
+L_no_washout = Gs*P;
 figure;
-step(P,20);
-
+rlocus(L_no_washout);
 grid on;
-title('Open-loop yaw-rate response');
-xlabel('Time (seconds)');
-ylabel('Yaw rate per unit rudder input');
+title('Root Locus Without Washout Filter');
 ```
 
-The simulated response initially moves in the negative direction, subsequently crosses zero, and exhibits oscillations of decreasing amplitude. At longer times, the response approaches a positive steady-state value.
+In this configuration, the complex pair becomes more damped over the listed gains, and all listed poles remain in the left half-plane. This is a comparison of the servo-plus-aircraft feedback loop without washout, not the final yaw-damper design. It should not be confused with the earlier preliminary plant-only root locus, which used a different loop and therefore gave different poles.
 
-The initial inverse response is associated with the positive real zero of the transfer function. The progressively decreasing oscillation amplitude is associated with the stable, damped complex poles of the system.
+## 4. Root Locus With the Washout Filter and Full-Loop Gain Selection
 
-The steady-state value for a unit-step input can be calculated independently using the final value theorem.
+The design root locus includes the aircraft, servo, and washout filter in the feedback path:
 
-## 4. Pole-Zero Analysis
+$$ L(s)=G_s(s)P(s)H_w(s), \qquad T(s)=\frac{G_s(s)P(s)}{1+K_1G_s(s)P(s)H_w(s)} $$
 
-### 4.1 System poles
-
-The poles are obtained by setting the denominator equal to zero:
-
-$$
-s^2+1.1s+4.2=0.
-$$
-
-Using the quadratic formula,
-
-$$
-s=\\frac{-1.1\\pm\\sqrt{1.1^2-4(4.2)}}{2}.
-$$
-
-Since the discriminant is negative,
-
-$$
-1.1^2-4(4.2)=-15.59,
-$$
-
-the poles form a complex-conjugate pair:
-
-$$
-\\boxed{s_{1,2}=-0.55\\pm j1.9742}
-$$
-
-Both poles have negative real parts, indicating that the open-loop system is asymptotically stable. Their nonzero imaginary components indicate an oscillatory mode.
-
-The real part determines the exponential decay rate, while the imaginary part determines the oscillation frequency.
-
-### 4.2 System zero
-
-The zero is obtained by setting the numerator equal to zero:
-
-$$
--4.5s+0.75=0.
-$$
-
-Therefore,
-
-$$
-\\boxed{s_z=+0.16667}
-$$
-
-The zero lies in the right half of the complex plane. Such a zero is associated with non-minimum-phase behaviour and can produce an inverse response to an input step.
-
-In the simulated response, the yaw rate initially moves opposite to its eventual steady-state direction before reversing and settling at a positive value.
-
-## 5. Natural Frequency and Damping Ratio
-
-The denominator of a standard second-order system is
-
-$$
-s^2+2\\zeta\\omega_n s+\\omega_n^2,
-$$
-
-where $\\omega_n$ is the undamped natural frequency and $\\zeta$ is the damping ratio.
-
-Comparing it with the aircraft denominator,
-
-$$
-s^2+1.1s+4.2,
-$$
-
-gives
-
-$$
-\\omega_n^2=4.2
-$$
-
-and
-
-$$
-2\\zeta\\omega_n=1.1.
-$$
-
-Thus, the natural frequency is
-
-$$
-\\boxed{\\omega_n=\\sqrt{4.2}
-=2.0494\\ \\text{rad/s}}
-$$
-
-and the damping ratio is
-
-$$
-\\boxed{\\zeta=\\frac{1.1}{2\\sqrt{4.2}}
-=0.2684}.
-$$
-
-The damped natural frequency is
-
-$$
-\\omega_d=\\omega_n\\sqrt{1-\\zeta^2}
-$$
-
-which gives
-
-$$
-\\boxed{\\omega_d\\approx1.9742\\ \\text{rad/s}}.
-$$
-
-The corresponding oscillation period is
-
-$$
-T_d=\\frac{2\\pi}{\\omega_d}
-$$
-
-or approximately
-
-$$
-\\boxed{T_d\\approx3.18\\ \\text{s}}.
-$$
-
-The exponential decay rate is determined by the real part of the poles:
-
-$$
-\\sigma=0.55\\ \\text{s}^{-1}.
-$$
-
-The corresponding decay time constant is
-
-$$
-\\boxed{\\tau_{\\mathrm{decay}}=\\frac{1}{0.55}
-\\approx1.82\\ \\text{s}}.
-$$
-
-This decay time constant is a characteristic of the aircraft's open-loop oscillatory mode and is distinct from the washout-filter time constant introduced in the controller design stage.
-
-## 6. Steady-State Analysis
-
-For a stable system subjected to a unit-step input, the final value theorem gives
-
-$$
-r(\\infty)=\\lim_{s\\to0}sR(s).
-$$
-
-Substituting the output expression,
-
-$$
-r(\\infty)=
-\\lim_{s\\to0}
-\\frac{-4.5s+0.75}{s^2+1.1s+4.2}.
-$$
-
-Evaluating the limit yields
-
-$$
-\\boxed{r(\\infty)=\\frac{0.75}{4.2}
-=0.17857}.
-$$
-
-The same result follows from the plant's DC gain:
-
-$$
-G(0)=\\frac{0.75}{4.2}=0.17857.
-$$
-
-Therefore, the response does not decay to zero because the unit-step input remains applied. Instead, the transient oscillations decay and the output approaches the nonzero steady-state value.
-
-The final value theorem is applicable because the poles of the step-response output are in the left half-plane, with the pole at the origin introduced by the step input cancelling in the final-value expression.
-
-## 7. Analytical Step-Response Verification
-
-The unit-step output is
-
-$$
-R(s)=
-\\frac{-4.5s+0.75}
-{s(s^2+1.1s+4.2)}.
-$$
-
-Using partial-fraction decomposition and inverse Laplace transformation, the time-domain response is approximately
-
-$$
-\\begin{aligned}
-r(t)={}&0.178571\\\\
-&+e^{-0.55t}\\big[
--0.178571\\cos(1.9742t)\\\\
-&\\qquad-2.3217\\sin(1.9742t)
-\\big],\\quad t\\geq0.
-\\end{aligned}
-$$
-
-The response comprises a constant steady-state term and a decaying oscillatory transient. The exponential factor governs the decay, while the sine and cosine terms govern the oscillatory behaviour.
-
-The analytical expression can be compared with MATLAB's `step` response to verify the transfer-function implementation and the calculations.
-
-## 8. MATLAB Verification
-
-The pole-zero locations, damping characteristics, and steady-state gain are obtained using the following commands:
+The washout filter makes the feedback frequency-dependent and rejects constant yaw-rate components at steady state. MATLAB's root-locus plot and closed-loop pole sweep were used to evaluate the effect of $K_1$. The selected gain is then validated using the full-loop model, not the plant-only preliminary configuration. The corresponding MATLAB setup is:
 
 ```matlab
-p = pole(P);
-z = zero(P);
+Hw = s/(s + 0.5);
+L_full = Gs*P*Hw;
+figure;
+rlocus(L_full);
+grid on;
+title('Full Yaw-Damper Root Locus With Washout Filter');
 
-disp('Poles:');
-disp(p);
-
-disp('Zeros:');
-disp(z);
-
-disp('Damping ratio and natural frequency:');
-damp(P);
-
-disp('Steady-state gain:');
-dcgain(P);
+K1 = 0.25;
+T_yaw = feedback(Gs*P, K1*Hw);
+damp(T_yaw);
+pole(T_yaw);
 ```
 
-The `pole` and `zero` functions determine the roots of the denominator and numerator, respectively. The `damp` function provides modal information, including natural frequencies and damping ratios. The `dcgain` function evaluates the system's steady-state gain.
+## 5. Full Yaw-Damper Root-Locus Analysis
 
-These numerical results provide an independent check of the analytical calculations.
+The root locus was analysed with the aircraft transfer function, servo dynamics, and washout filter included in the feedback loop. The purpose was to determine how the yaw-damper gain ($K_1$) affects closed-loop pole locations, system stability, and Dutch-roll damping.
 
-## 9. Preliminary Results
+The root-locus plot shows how the closed-loop poles move as the gain increases. MATLAB was used to calculate the closed-loop poles, damping ratios, natural frequencies, and time constants at selected gain values.
 
-| Parameter | Calculated result | Interpretation |
-|---|---:|---|
-| Open-loop poles | $-0.55\\pm j1.9742$ | Stable oscillatory mode |
-| Open-loop zero | $+0.16667$ | Right-half-plane zero |
-| Natural frequency | $2.0494\\ \\text{rad/s}$ | Undamped modal frequency |
-| Damping ratio | $0.2684$ | Open-loop damping characteristic |
-| Damped frequency | $1.9742\\ \\text{rad/s}$ | Oscillation frequency |
-| Oscillation period | $3.18\\ \\text{s}$ | Time per oscillation |
-| Decay time constant | $1.82\\ \\text{s}$ | Exponential transient decay |
-| Unit-step steady-state output | $0.17857$ | DC gain for a unit-step input |
+## 6. Closed-Loop Pole and Damping Results
 
-The calculated open-loop damping ratio is below the assignment's specified target of $\\zeta_{dr}\\geq0.4$. This establishes a quantitative motivation for investigating yaw-rate feedback and washout-filter compensation.
+The following results were obtained for the full yaw-damper configuration.
 
-The pole and damping calculations describe the supplied second-order denominator. The identification of the mode as the aircraft's Dutch-roll mode is consistent with the assignment's intended model, but a full modal identification would require the underlying aircraft dynamics or additional model context.
+| Gain ($K_1$) | Dutch-roll poles | Dutch-roll damping ratio ($\zeta$) | Stable? | Meets ($\zeta \geq 0.4$)? |
+| :--- | :--- | :--- | :--- | :--- |
+| 0.050 | -0.6721 $\pm$ j1.9189 | 0.331 | Yes | No |
+| 0.100 | -0.8010 $\pm$ j1.8479 | 0.398 | Yes | No |
+| 0.150 | -0.9377 $\pm$ j1.7560 | 0.471 | Yes | Yes |
+| 0.200 | -1.0836 $\pm$ j1.6340 | 0.553 | Yes | Yes |
+| 0.250 | -1.2398 $\pm$ j1.4647 | 0.646 | Yes | Yes |
+| 0.300 | -1.4048 $\pm$ j1.2066 | 0.759 | Yes | Yes |
+| 0.400 | -0.9143 $\pm$ j0.4727 | 0.888 | Yes | Yes |
+| 0.500 | -0.6647 $\pm$ j0.5344 | 0.779 | Yes | Yes |
 
-## 10. Work Completed and Next Steps
+The full system has four closed-loop poles. The table reports the complex-conjugate pair associated with the Dutch-roll response at each gain. At $K_1=0.50$, a second complex-conjugate pair is also present at approximately $-5.1353 \pm j1.5803$, with a damping ratio of $0.956$.
 
-The following work has been completed:
+## 7. Interpretation of the Root-Locus Results
 
-1. The supplied aircraft yaw-rate transfer function has been implemented in MATLAB.
-2. The open-loop unit-step response has been simulated.
-3. The system poles and zero have been determined analytically and numerically.
-4. The natural frequency, damping ratio, damped frequency, oscillation period, and decay time constant have been calculated.
-5. The final value of the unit-step response has been obtained using the final value theorem.
-6. The observed oscillatory and inverse-response characteristics have been related to the pole-zero structure.
+At low gains, the Dutch-roll damping ratio remains below the assignment's minimum requirement of $0.4$. At $K_1=0.10$, the damping ratio is $0.398$, which is close to, but still below, the required value.
 
-The next stage will introduce the rudder servo,
+Increasing the gain to $K_1=0.15$ raises the damping ratio to $0.471$. Further increases improve the damping ratio over the tested range up to $K_1=0.40$, where it reaches $0.888$. At $K_1=0.50$, the dominant complex pair changes, and its damping ratio decreases to $0.779$.
 
-$$
-G_s(s)=\\frac{-10}{s+10},
-$$
+All the tested gain values in this full-loop analysis have closed-loop poles with negative real parts. Therefore, the closed-loop system is stable at each tested gain.
 
-and the washout filter,
+## 8. Candidate Yaw-Damper Gain
 
-$$
-H_w(s)=\\frac{s}{s+1/\\tau},
-\\qquad 1\\leq\\tau\\leq4\\ \\text{s}.
-$$
+The gain $K_1=0.25$ was selected as an initial candidate for further validation.
 
-## Update 2 — Work done on 20 October 2026
+Its Dutch-roll poles are:
 
-### 11. Compensated Open-Loop Root-Locus Analysis
+$$ s_{1,2}=-1.2398 \pm j1.4647 $$
 
-The aircraft plant was combined with the specified rudder servo and washout filter to form the compensated open-loop transfer function. The initial washout time constant was set to $\tau=2\ \text{s}$.
+with damping ratio:
 
-The component transfer functions are
+$$ \zeta=0.646 $$
 
-$$
-P(s)=\frac{-4.5s+0.75}{s^2+1.1s+4.2},
-\qquad
-G_s(s)=\frac{-10}{s+10},
-\qquad
-H_w(s)=\frac{s}{s+0.5}.
-$$
+This exceeds the assignment's minimum damping requirement of $0.4$. The other two closed-loop poles are located at approximately $-0.6753$ and $-8.4451$, so all four poles lie in the left half-plane.
 
-The compensated open-loop transfer function, excluding the adjustable gain $K$, is
+## 9. Closed-Loop Yaw-Rate Step Response
 
-$$
-L_0(s)=P(s)G_s(s)H_w(s)
-=\frac{(-4.5s+0.75)(-10)s}
-{(s^2+1.1s+4.2)(s+10)(s+0.5)}.
-$$
+A unit-step response was evaluated in MATLAB for the full yaw-damper configuration using the selected gain ($K_1=0.25$). The closed-loop transfer function was defined as:
 
-### 11.1 Poles and zeros
+$$ T_{\mathrm{yaw}}(s) = \frac{G_s(s)P(s)}{1+K_1G_s(s)H_w(s)P(s)} $$
 
-The open-loop poles are
+| Pole | Damping ratio | Natural frequency (rad/s) | Time constant (s) |
+| :--- | :--- | :--- | :--- |
+| -0.6753 | 1.000 | 0.675 | 1.48 |
+| -1.2398 + j1.4647 | 0.646 | 1.92 | 0.807 |
+| -1.2398 - j1.4647 | 0.646 | 1.92 | 0.807 |
+| -8.4451 | 1.000 | 8.445 | 0.118 |
 
-$$
-s=-0.55\pm j1.9742,\qquad s=-10,\qquad s=-0.5.
-$$
+All four poles have negative real parts, confirming that the closed-loop system is stable for the selected gain. The Dutch-roll pole pair has a damping ratio of $0.646$, exceeding the assignment requirement of $\zeta \geq 0.4$.
 
-The open-loop zeros are
+## 10. Step-Response Characteristics
 
-$$
-s=0,\qquad s=+0.16667.
-$$
+| Parameter | MATLAB result |
+| :--- | :--- |
+| Rise time | 0.1774 s |
+| Transient time | 4.3505 s |
+| Settling time | 7.5360 s |
+| Settling minimum | -0.3761 |
+| Settling maximum | -0.1651 |
+| Overshoot | 110.5954% |
+| Undershoot | 632.2747% |
+| Peak value | 1.1291 |
+| Peak time | 0.6544 s |
 
-The complex-conjugate pair comes from the aircraft plant. The pole at $-10$ represents the servo dynamics, and the pole at $-0.5$ comes from the washout filter for $\tau=2\ \text{s}$. The washout filter introduces a zero at the origin. The aircraft plant contributes a right-half-plane zero at $+0.16667$.
+## 11. Interpretation and Design Status
 
-### 11.2 Interpreting the root-locus plot
+The selected gain $K_1=0.25$ satisfies the Dutch-roll damping requirement in the linear closed-loop pole analysis. The step-response analysis also confirms stability and provides quantitative measures of the transient behaviour.
 
-The root-locus plot displays the possible closed-loop pole locations as the scalar gain $K$ varies under MATLAB's standard negative-feedback convention. At zero gain, the branches begin at the four open-loop poles. As the gain changes, the branches move and terminate at the finite open-loop zeros or approach infinity.
+## 12. Simulink Validation of the Closed-Loop Yaw-Rate Response
 
-The horizontal axis is the real part of the pole and the vertical axis is its imaginary part. Poles in the left half-plane correspond to decaying modes; poles in the right half-plane correspond to growing modes. Complex poles indicate oscillatory behaviour. The grey contours indicate constant damping ratio and can be used to estimate damping at candidate pole locations.
+The closed-loop yaw-damper configuration was simulated in Simulink using the selected gain ($K_1=0.25$).
 
-There are four open-loop poles and two finite zeros, so two branches terminate at the finite zeros and two branches approach infinity. The asymptote centroid is
+| Parameter | MATLAB | Simulink |
+| :--- | :--- | :--- |
+| Final yaw rate | -0.178572 | -0.178572 |
+| Maximum yaw rate | 1.1291 | 1.112467 |
+| Time of maximum yaw rate (s) | 0.6544 | 0.7330 |
+| Minimum yaw rate | -0.3761 | -0.374355 |
+| Time of minimum yaw rate (s) | Approx 2.65--2.75 | 2.7290 |
+| Settling time (s) | 7.5360 | Not calculated |
 
-$$
-\sigma_a=\frac{\sum p_i-\sum z_i}{n-m}
-=\frac{-11.6-0.16667}{2}
-\approx -5.8833,
-$$
+## 13. MATLAB–Simulink Comparison and Conclusion
 
-with asymptote angles $+90^\circ$ and $-90^\circ$.
+The comparison demonstrates close agreement between the MATLAB transfer-function model and the Simulink implementation for the selected gain and unit-step input.
 
-The right-half-plane zero is an important limitation: one root-locus branch approaches this zero as gain becomes large. Therefore, increasing gain indefinitely cannot be assumed to preserve closed-loop stability.
+## 14. Simulink Settling-Time Verification
 
-### 11.3 Design implications
+The settling time of the closed-loop yaw-rate response was calculated from the logged Simulink output using MATLAB. A 2% settling band was defined around the final simulated yaw-rate value.
 
-The assignment specifies a Dutch-roll damping target of $\zeta_{dr}\geq0.4$. A candidate gain must be selected by checking the actual closed-loop poles and damping ratios, not by visual inspection of the root-locus plot alone. The feedback sign must also be justified from the chosen signal convention and the signs of the plant and servo transfer functions.
+$$ y_{\mathrm{final}} \pm 0.02 |y_{\mathrm{final}}| $$
 
-The root-locus plot is a linear analysis. Rudder saturation is not represented by the root locus and must be checked separately in time-domain simulation.
+giving the limits:
 
-### 11.4 Status of work
+$$ -0.182144 \leq y(t) \leq -0.175001 $$
 
-Completed in this update:
+| Parameter | MATLAB | Simulink |
+| :--- | :--- | :--- |
+| Final yaw rate | -0.178572 | -0.178572 |
+| 2% settling time | 7.5360 s | 7.8979 s |
 
-1. Combined the aircraft plant, servo, and washout filter for an initial washout time constant of $2\ \text{s}$.
-2. Generated the compensated open-loop root-locus plot.
-3. Identified the four open-loop poles and two finite zeros.
-4. Interpreted the real and imaginary axes, damping-ratio contours, and asymptotes.
+## 15. Closed-Loop Validation Summary
 
-Not yet completed: selecting the feedback sign and gain, verifying closed-loop damping and stability, and running closed-loop time-domain simulations with rudder limits.
+For the selected yaw-damper gain ($K_1=0.25$), the full closed-loop pole analysis gives a Dutch-roll damping ratio of $0.646$.
 
-## Update 3 — Work done on 20 October 2026: Closed-Loop Gain Sweep
+## 16. Effect of Washout Time Constant on Dutch-Roll Damping
 
-### 11. Purpose
+A parametric sweep was performed in MATLAB with the yaw-damper gain held constant at $K_1=0.25$, while the washout time constant was varied from $1$ to $4$ seconds.
 
-The compensated open-loop model was evaluated using MATLAB's standard negative-feedback convention to investigate how the scalar feedback gain \(K\) affects closed-loop pole locations and damping. The washout-filter time constant was fixed at \(\tau=2\ \text{s}\) for this initial comparison.
+$$ H_w(s)=\frac{s}{s+1/\tau} $$
 
-The compensated open-loop transfer function, excluding \(K\), is
+#### 16.1 Results of the Time-Constant Sweep
 
-$$
-L_0(s)=P(s)G_s(s)H_w(s)
-$$
+| Washout time constant, $\tau$ (s) | Dutch-roll damping ratio, $\zeta$ | Natural frequency (rad/s) | Steady-state yaw rate |
+| :--- | :--- | :--- | :--- |
+| 1 | 0.55622 | 1.5741 | -0.17857 |
+| 2 | 0.64608 | 1.9189 | -0.17857 |
+| 3 | 0.62826 | 2.0271 | -0.17857 |
+| 4 | 0.61806 | 2.0695 | -0.17857 |
 
-where
+#### 16.2 Effect on Dutch-Roll Damping
+The results show that the damping ratio does not increase monotonically with the washout time constant. 
 
-$$
-P(s)=\frac{-4.5s+0.75}{s^2+1.1s+4.2},
-\qquad
-G_s(s)=\frac{-10}{s+10},
-\qquad
-H_w(s)=\frac{s}{s+0.5}.
-$$
+#### 16.3 Effect on Steady-State Yaw Rate
+The steady-state yaw rate remains approximately $-0.17857$ for every tested time constant, consistent with the washout filter's zero DC gain ($H_w(0)=0$).
 
-The closed-loop system for this comparison is
+## 17. Closed-Loop Yaw-Damper Performance: Damper OFF vs ON
 
-$$
-T(s)=\frac{K L_0(s)}{1+K L_0(s)}.
-$$
+The selected yaw-damper parameters were $K_1=0.25, \qquad \tau=2 \text{s}$.
 
-This equation describes the standard negative-feedback connection used by `feedback(K*L0,1)` in MATLAB. The physical feedback sign still needs to be justified from the intended signal definitions and controller architecture.
+#### 17.1 Simulation Results
 
-### 12. Compensated Open-Loop Poles and Zeros
+| Performance parameter | Damper OFF | Damper ON |
+| :--- | :--- | :--- |
+| Dutch-roll damping ratio | 0.2684 | 0.6461 |
+| Dutch-roll natural freq (rad/s) | 2.0494 | 1.9189 |
+| Maximum yaw rate | 1.387418 | 1.129073 |
+| Time of max yaw rate (s) | 0.723 | 0.652 |
+| Minimum yaw rate | -0.831079 | -0.376070 |
+| Time of min yaw rate (s) | 2.315 | 2.644 |
+| Theoretical steady-state | -0.178571 | -0.178571 |
+| Simulated final yaw rate | -0.178531 | -0.178572 |
+| 2% settling time (s) | 10.887 | 7.537 |
 
-MATLAB returned the following compensated open-loop poles:
+#### 17.2 Closed-Loop Pole Analysis
 
-$$
-s=-10,\quad -0.55\pm j1.9742,\quad -0.5.
-$$
+**Damper OFF:**
+$$ s_{1,2}=-0.55 \pm j1.9742, \qquad s_3=-10 $$
 
-The zeros are
+**Damper ON:**
+$$ s_{1,2}=-1.2398 \pm j1.4647 $$
+$$ s_3=-0.6753 $$
+$$ s_4=-8.4451 $$
 
-$$
-s=0,\qquad s=+0.1667.
-$$
+## 18. Pulse-Response Comparison: Yaw Damper OFF vs ON
 
-The poles comprise the servo pole, the aircraft's complex-conjugate pair, and the washout-filter pole. The zero at the origin comes from the washout filter. The positive real zero is inherited from the aircraft plant and is a right-half-plane zero.
+#### 18.1 Simulation Results
 
-### 13. Gain Sweep Results
+| Performance parameter | Damper OFF | Damper ON |
+| :--- | :--- | :--- |
+| Maximum yaw rate | 2.774836 | 2.258147 |
+| Time of max yaw rate (s) | 0.723 | 0.652 |
+| Minimum yaw rate | -3.734635 | -2.307466 |
+| Time of min yaw rate (s) | 1.930 | 1.835 |
+| Final yaw rate | 0.000124 | 0.000001 |
+| 2% settling time (s) | 8.745 | 5.255 |
 
-The following table summarizes the closed-loop pole pair with the smallest magnitude of negative real part for each tested gain. This is the slowest mode in each reported case and is a useful initial indicator of the system's transient behaviour.
+## 19. Steady-Turn and Washout-Filter Verification
 
-| Gain \(K\) | Slowest pole pair | Damping ratio | Status |
-|---:|---|---:|---|
-| 0.10 | \(-0.8010\pm j1.8479\) | 0.398 | Stable; slightly below the target |
-| 0.25 | \(-1.2398\pm j1.4647\) | 0.646 | Stable; meets the numerical damping target |
-| 0.50 | \(-0.6647\pm j0.5344\) | 0.779 | Stable; meets the numerical damping target |
-| 1.00 | \(-0.3277\pm j0.5033\) | 0.546 | Stable; meets the numerical damping target |
-| 2.00 | \(-0.1511\pm j0.4161\) | 0.341 | Stable; below the target |
-| 5.00 | \(-0.0227\pm j0.2918\) | 0.077 | Stable; below the target |
+#### 19.1 Simulation Results
 
-All four poles in each tested case had negative real parts, so every tested closed-loop linear model was stable under the assumed feedback convention.
+| Parameter | Result |
+| :--- | :--- |
+| Washout time constant, $\tau$ | $2 \text{s}$ |
+| Constant input yaw rate | 1 |
+| Initial filter output | 1.000000 |
+| Maximum filter output | 1.000000 |
+| Filter output at $t=10 \text{s}$ | 0.00673795 |
+| Filter output at $t=20 \text{s}$ | 0.00004540 |
+| Theoretical DC gain | 0 |
+| Theoretical steady-state output | 0 |
 
-The results show that the damping ratio does not increase monotonically with gain. From \(K=0.1\) to \(K=0.25\), the slowest complex pair moves farther into the left half-plane and its damping ratio increases. At higher gains, the slowest pair moves closer to the imaginary axis and its damping ratio decreases. For example, at \(K=5\), the pair at approximately \(-0.0227\pm j0.2918\) is very lightly damped despite remaining mathematically stable.
+## 20. Simulink Verification: Damper OFF vs ON
 
-At \(K=0.5\), the four poles form two complex-conjugate pairs. The slower pair has a damping ratio of approximately 0.779, while the faster pair at approximately \(-5.1353\pm j1.5803\) has a damping ratio of approximately 0.956. These modes must be considered together when interpreting the complete response.
+### 20.1 Damper-OFF Simulation Results
 
-### 14. Preliminary Interpretation
+| Performance parameter | Damper OFF — Simulink |
+| :--- | :--- |
+| Maximum yaw rate | 1.387267 |
+| Time of max yaw rate (s) | 0.7304 |
+| Minimum yaw rate | -0.830770 |
+| Time of min yaw rate (s) | 2.3294 |
+| Final yaw rate | -0.178184 |
+| 2% settling time (s) | 11.0127 |
 
-The numerical sweep identifies \(K=0.25\) as a promising candidate for further investigation: its slowest pole pair has a damping ratio of approximately 0.646 and a real part of approximately \(-1.24\), indicating faster decay than the slowest pair at \(K=0.5\). This is not yet a final gain selection.
+### 20.2 Simulink Comparison: Damper OFF vs ON
 
-A final choice cannot be made from pole damping alone. The next checks must include the time-domain yaw-rate response, rudder command and saturation, the response to the specified step and pulse inputs, and verification that the feedback sign matches the intended physical yaw-damper action. The relevant Dutch-roll mode must also be identified consistently as the gain changes.
+| Performance parameter | Damper OFF | Damper ON |
+| :--- | :--- | :--- |
+| Maximum yaw rate | 1.387267 | 1.112467 |
+| Time of max yaw rate (s) | 0.7304 | 0.7330 |
+| Minimum yaw rate | -0.830770 | -0.374355 |
+| Time of min yaw rate (s) | 2.3294 | 2.7290 |
+| Final yaw rate | -0.178184 | -0.178572 |
+| 2% settling time (s) | 11.0127 | 7.8979 |
 
-### 15. MATLAB Commands Used
+## 21. MIL-F-8785C Level I Dutch-Roll Assessment
 
-```matlab
-K_values = [0.1 0.25 0.5 1 2 5];
+### 21.1 Assumed Aircraft Class and Flight Category
 
-for K = K_values
-    T = feedback(K*L0, 1);
+For this design study, the aircraft is assumed to be **Class IV, Category A**. MIL-F-8785C Table VI specifies:
+- Minimum Dutch-roll damping ratio: $\zeta_{dr} \geq 0.4$
+- Minimum undamped natural frequency: $\omega_{nd} \geq 1.0 \mathrm{rad/s}$
 
-    fprintf('\\nK = %.2f\\n', K);
-    disp('Closed-loop poles:');
-    disp(pole(T));
+### 21.2 Open-Loop Assessment
 
-    disp('Damping ratios and natural frequencies:');
-    damp(T);
-end
-```
+| Parameter | Open-loop result | Level I requirement | Result |
+| :--- | :--- | :--- | :--- |
+| Damping ratio ($\zeta_{dr}$) | 0.2684 | $\geq 0.4$ | Fail |
+| Undamped natural freq ($\omega_{nd}$) | 2.0494 rad/s | $\geq 1.0$ rad/s | Pass |
 
-### 16. Work Status and Next Steps
+### 21.3 Closed-Loop Assessment with the Selected Yaw Damper
 
-Completed in this update:
-
-1. Calculated the compensated open-loop poles and zeros.
-2. Evaluated the closed-loop poles for six positive gain values using standard negative feedback.
-3. Compared damping ratios and stability across the gain sweep.
-4. Identified \(K=0.25\) as a candidate for further time-domain testing, not as the final design.
-
-The compensated open-loop system will then be analysed using root-locus methods to select a suitable feedback gain. Closed-loop poles, damping ratio, time-domain responses, and rudder saturation will subsequently be evaluated in MATLAB and Simulink against the assignment requirements.
-
-At this stage, no closed-loop controller has been designed or validated. The results presented here constitute the open-loop baseline for the subsequent yaw-damper design.
-
-
-## Update 4 — Work done on 20 October 2026: Closed-Loop Response Comparison
-
-### 17. Purpose
-
-The closed-loop transfer function generated by `feedback(K*L0,1)` was simulated for several gains to compare transient responses over a 20-second interval. The gains plotted were \(K=0.1,\ 0.25,\ 0.5,\ 1,\ 2,\ 5\).
-
-### 18. Observations from the Response Plot
-
-The plotted responses show that increasing gain does not monotonically improve the transient response.
-
-- At \(K=0.1\), the response has a relatively small initial peak and modest undershoot. Its slow complex pole pair has a damping ratio of approximately 0.398, just below the specified target.
-- At \(K=0.25\), the response has a moderate initial peak and undershoot. The slow pole pair has a damping ratio of approximately 0.646.
-- At \(K=0.5\), the response has a larger initial peak, although the slow pole pair has a damping ratio of approximately 0.779.
-- At \(K=1\), the initial peak is larger than for \(K=0.25\), despite the slow pole pair still meeting the numerical damping target.
-- At \(K=2\), the response exhibits a large negative undershoot and a slower return towards zero. Its slow pole pair has a damping ratio of approximately 0.341.
-- At \(K=5\), the response exhibits a large excursion and a very slow oscillation. The slow pole pair has a damping ratio of approximately 0.077, and the response has not settled within the 20-second simulation interval.
-
-These observations are consistent with the earlier pole sweep. The system is mathematically stable for each of these tested gains, but stability alone does not establish satisfactory damping or transient performance.
-
-### 19. Interpretation and Model Limitation
-
-The simulated transfer function is
-
-$$
-T(s)=\frac{K L_0(s)}{1+K L_0(s)}.
-$$
-
-Since the washout filter has a zero at the origin,
-
-$$
-L_0(0)=0,
-$$
-
-and therefore
-
-$$
-T(0)=0.
-$$
-
-For the stable cases, a unit-step input to this transfer function eventually produces an output that returns to zero. This is mathematically consistent with the model simulated.
-
-However, this transfer function should not be treated as the assignment's physical rudder-step response. In a conventional yaw-damper architecture, the pilot or test rudder command enters through the aircraft and servo forward path, while the washout filter and gain form the yaw-rate feedback path. The root-locus characteristic equation can depend on the product of the forward and feedback paths, but the command-to-yaw-rate transfer function is not generally \(K L_0/(1+K L_0)\).
-
-For a standard negative-feedback arrangement, a candidate command-to-yaw-rate transfer function is
-
-$$
-\frac{r(s)}{\delta_{r,\mathrm{cmd}}(s)}
-=
-\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
-$$
-
-This expression assumes the stated block arrangement and standard negative feedback. The physical sign must still be confirmed against the assignment's signal definitions and rudder direction. The resulting command response must be checked before drawing conclusions about the actual rudder-step test.
-
-
-## Update 5 — Work done on 20 October 2026: Command-to-Yaw-Rate Response
-
-### 21. Model and Simulation
-
-The washout filter was placed in the yaw-rate feedback path, while the rudder command entered the forward path through the servo and aircraft plant. The simulated command-to-yaw-rate transfer function, using the assumed standard negative-feedback convention, was
-
-$$
-T_{\mathrm{cmd}}(s)=
-\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
-$$
-
-For this run, $K=0.25$ and $\tau=2\ \text{s}$. The response was simulated over 20 seconds using MATLAB's `step` function.
-
-### 22. Response Observations
-
-The plotted response initially rises to approximately 1.13, then crosses zero and reaches a negative minimum of approximately $-0.38$. It subsequently approaches a negative steady-state value near $-0.18$.
-
-This is a transient inverse response followed by a nonzero steady-state output. The initial positive excursion and subsequent negative settling value are consistent with the supplied plant's right-half-plane zero and the negative DC gain of the servo.
-
-The plot is a unit-step response of the linear command-to-yaw-rate transfer function. It does not yet represent the assignment's specified $1^\circ$ rudder-step test with actuator saturation.
-
-### 23. Analytical Steady-State Verification
-
-The final value can be obtained using the final value theorem:
-
-$$
-r(\infty)=\lim_{s\to0}sR(s)=\lim_{s\to0}T_{\mathrm{cmd}}(s)
-$$
-
-provided the closed-loop system is stable.
-
-Since the washout filter is
-
-$$
-H_w(s)=\frac{s}{s+1/\tau},
-$$
-
-its DC gain is zero:
-
-$$
-H_w(0)=0.
-$$
-
-Therefore, the feedback term vanishes at DC, and
-
-$$
-T_{\mathrm{cmd}}(0)=P(0)G_s(0).
-$$
-
-The aircraft plant has DC gain
-
-$$
-P(0)=\frac{0.75}{4.2}=0.17857,
-$$
-
-while the servo has DC gain
-
-$$
-G_s(0)=\frac{-10}{10}=-1.
-$$
-
-Thus,
-
-$$
-\boxed{T_{\mathrm{cmd}}(0)=-0.17857}.
-$$
-
-The calculated final value agrees with the plotted response. The negative sign follows from the specified servo transfer function. Its interpretation as a physical rudder direction depends on the signal definitions and sign convention.
-
-## Update 6 — Work done on 21 October 2026: Closed-Loop Pole Verification
-
-### 25. Model Configuration
-
-The command-to-yaw-rate transfer function was evaluated for the candidate parameters
-
-$$
-K=0.25,\qquad \tau=2\ \text{s},
-$$
-
-using the standard negative-feedback arrangement
-
-$$
-T_{\mathrm{cmd}}(s)=
-\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
-$$
-
-The model uses the aircraft plant, rudder servo, and washout filter specified earlier in this report.
-
-### 26. Closed-Loop Poles and Damping
-
-MATLAB returned the following closed-loop poles:
-
-$$
-s_1=-8.4451,
-$$
-
-$$
-s_{2,3}=-1.2398\pm j1.4647,
-$$
-
-$$
-s_4=-0.6753.
-$$
-
-All poles have negative real parts. The command-response model is therefore asymptotically stable for this parameter set, assuming the feedback sign and model structure are correct.
-
-The complex-conjugate pair has damping ratio
-
-$$
-\boxed{\zeta\approx0.646}
-$$
-
-and natural frequency
-
-$$
-\omega_n\approx1.92\ \text{rad/s}.
-$$
-
-The pair satisfies the numerical damping requirement of $\zeta_{dr}\geq0.4$, provided this pair is the relevant Dutch-roll mode for the supplied model. The real poles are non-oscillatory modes; their MATLAB-reported damping ratios are 1.0. The slower real pole at $-0.6753$ has a time constant of approximately
-
-$$
-\tau_p=\frac{1}{0.6753}\approx1.48\ \text{s}.
-$$
-
-This real pole contributes to the non-oscillatory tail of the time response.
-
-### 27. Response-Plot Interpretation
-
-The command-to-yaw-rate step response exhibits an initial positive peak, a negative undershoot, and a final value near $-0.1786$ per unit command. The nonzero steady-state value is consistent with the DC gain calculated previously:
-
-$$
-T_{\mathrm{cmd}}(0)=P(0)G_s(0)=-0.17857,
-$$
-
-because the washout filter has zero DC gain and therefore contributes no steady-state feedback.
-
-The response is consistent with the pole and DC-gain calculations. However, the result remains conditional on validating the physical feedback sign and the interpretation of the input and output directions.
-
-### 28. Current Status
-
-For $K=0.25$ and $\tau=2\ \text{s}$, the linear command-response model is stable and its complex pole pair has a damping ratio above 0.4. This makes the parameter set a candidate for the next verification stage, not a finalized design.
-
-
-## Update 7 — Work done on 21 October 2026: Step and Pulse Response Tests
-
-### 29. Test Setup
-
-The command-to-yaw-rate model was tested using two input signals with the candidate parameters
-
-$$
-K=0.25,\qquad \tau=2\ \text{s}.
-$$
-
-The command-to-yaw-rate transfer function was
-
-$$
-T_{\mathrm{cmd}}(s)=\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
-$$
-
-The first input was a sustained unit step corresponding to a 1-degree rudder-command step. The second input was a 2-degree pulse applied from 0 to 1 second, followed by zero command. Both responses were simulated over 20 seconds using MATLAB's `lsim` function. These were linear simulations without actuator saturation.
-
-### 30. Numerical Results
-
-| Metric | 1-degree step | 2-degree, 1-second pulse |
-|---|---:|---:|
-| Maximum response | 1.1291 | 2.2581 |
-| Minimum response | -0.3761 | -2.3074 |
-| Long-time response | Approximately -0.1786 | Approaches 0 |
-
-The values are reported in the output units implied by the supplied transfer function. They should not be labelled as degrees per second unless the assignment defines the plant output in those units.
-
-### 31. Step-Response Interpretation
-
-For the 1-degree step, the response rises to approximately 1.1291, then undershoots to approximately -0.3761 before approaching a steady value near -0.1786.
-
-This steady-state value agrees with the previously calculated DC gain:
-
-$$
-T_{\mathrm{cmd}}(0)=P(0)G_s(0)=-0.17857,
-$$
-
-because the washout filter has zero DC gain and therefore contributes no steady-state feedback. The initial positive excursion followed by a negative steady-state value is consistent with the right-half-plane zero in the aircraft plant and the negative DC gain of the specified servo model.
-
-### 32. Pulse-Response Interpretation
-
-The 2-degree command pulse is present for the first second and is zero thereafter. The response reaches approximately 2.2581 and a minimum of approximately -2.3074, then decays towards zero.
-
-Since the command is removed after one second, the remaining response is the transient response of the closed-loop linear model. Its decay towards zero is consistent with the stable poles obtained for the selected parameter set.
-
-### 33. Limitations and Next Steps
-
-These tests characterize the linear command-to-yaw-rate model. They do not establish actuator compliance because the rudder saturation limit has not yet been included. The feedback sign and signal directions must also be confirmed against the assignment's physical definitions before the candidate is treated as a final design.
-
-The next stage is to implement the controller in Simulink, include the specified rudder saturation limit of \(\pm20^\circ\), and compare the commanded rudder signal with the saturated actuator output. The saturated response should then be compared with the linear predictions to determine whether actuator limiting materially changes the yaw-rate response.
-
-
-## Update 8 — Work done on 21 October 2026: Simulink Scope Verification
-
-### 34. Simulink Configuration
-
-The Simulink model uses a step command, a negative-gain servo, a saturation block with limits of \(+20\) and \(-20\), the aircraft transfer function, a washout filter with \(\tau=2\ \text{s}\), and a feedback gain of \(K=0.25\). The Sum block is configured for command minus feedback.
-
-The four scopes monitor the signal entering the servo, the servo output before saturation, the aircraft output before the washout filter, and the washout-filter output, respectively.
-
-### 35. Scope 1 — Signal Entering the Servo
-
-The signal begins at approximately 1, temporarily decreases to approximately 0.765, rises to approximately 1.136, and settles at 1. This behaviour is consistent with a feedback-corrected command: the washout feedback modifies the command during the transient, then approaches zero so the servo input returns to the original step value.
-
-### 36. Scope 2 — Servo Output Before Saturation
-
-The servo output has a transient negative excursion, with a minimum of approximately \(-1.14\), and settles near \(-1\). This is consistent with the servo's DC gain:
-
-$$
-G_s(0)=\frac{-10}{10}=-1.
-$$
-
-The observed servo output remains within the saturation limits of \(\pm20\). Therefore, the saturation block does not activate during this \(1^\circ\) step test.
-
-### 37. Scope 3 — Aircraft Yaw-Rate Output
-
-The aircraft output reaches approximately \(+1.13\), undershoots to approximately \(-0.38\), and settles near \(-0.18\). These results agree closely with the MATLAB linear command-to-yaw-rate simulation:
-
-| Metric | MATLAB | Simulink plot, approximate |
-|---|---:|---:|
-| Maximum output | 1.1291 | 1.13 |
-| Minimum output | -0.3761 | -0.38 |
-| Steady-state output | -0.17857 | -0.18 |
-
-The close agreement supports consistency between the MATLAB and Simulink models for this input, parameter set, and signal scaling. It does not by itself validate the physical feedback sign or establish compliance with all assignment criteria.
-
-### 38. Scope 4 — Washout-Filter Output
-
-The washout-filter output shows a transient response that decays towards zero. The washout transfer function is
-
-$$
-H_w(s)=\frac{s}{s+0.5},
-$$
-
-which has zero DC gain:
-
-$$
-H_w(0)=0.
-$$
-
-Thus, the filter passes transient changes while removing the steady-state component from the yaw-rate feedback signal. As the filtered signal approaches zero, the feedback correction to the servo input also disappears.
-
-### 39. Saturation Verification Status
-
-The saturation limits are configured as \(+20\) and \(-20\), assuming the actuator signal is in degrees. In the \(1^\circ\) step test, the servo output remains approximately between \(-1.14\) and 0, so the saturation block is inactive. This test verifies that the block does not disturb the response when the actuator command is within limits; it does not demonstrate limiting behaviour at the boundaries.
-
-## Update 9 — Work done on 21 October 2026: Simulink Pulse-Test Results
-
-### 40. Pulse Input Verification
-
-A pulse was generated using two Step blocks: the first applies an amplitude of 2 at \(t=0\), and the second applies \(-2\) at \(t=1\ \text{s}\). The two signals are summed, giving an input of 2 for the first second and zero thereafter:
-
-$$
-u(t)=
-\begin{cases}
-2, & 0\leq t<1,\\
-0, & t\geq1.
-\end{cases}
-$$
-
-The input scope confirms the intended pulse shape.
-
-### 41. Scope 1 — Signal Entering the Servo
-
-The servo input starts at 2, changes during the pulse, and changes sharply when the external command returns to zero at \(t=1\ \text{s}\). It then decays towards zero. The response includes feedback-loop dynamics; it is not simply the external pulse because the feedback signal is subtracted at the Sum block.
-
-### 42. Scope 2 — Servo Output Before Saturation
-
-The servo output exhibits a negative transient, with a plotted minimum of approximately \(-1.7\), and then approaches zero after the pulse. The negative response is consistent with the negative numerator of the servo transfer function,
-
-$$
-G_s(s)=\frac{-10}{s+10}.
-$$
-
-The observed output remains inside the configured limits of \(\pm20\), so the saturation block does not activate during this pulse test.
-
-### 43. Scope 3 — Aircraft Yaw-Rate Output
-
-The aircraft yaw-rate signal reaches approximately \(+2.2\), undershoots to approximately \(-2.3\), and decays towards zero after the pulse ends. Since the input returns to zero, a transient response that decays to zero is expected for a stable system with no persistent command. The plotted response appears to settle by approximately 6–8 seconds.
-
-### 44. Scope 4 — Washout-Filter Output
-
-The washout-filter output shows a transient, including a negative excursion of approximately \(-2.45\), followed by a smaller positive response and decay towards zero. This is consistent with the washout filter responding to changes in yaw rate while rejecting its steady-state component.
-
-### 45. Pulse-Test Conclusion
-
-The pulse generator produces the intended input, and the signals in the servo, aircraft, and washout stages show transient behaviour that decays after the pulse. The rudder signal does not approach the \(\pm20\) saturation limits in this test; therefore, this run does not demonstrate active saturation. The observed peaks and minima are approximate readings from Scope plots, not exact measurements extracted from logged simulation data.
-
-
-## Update 10 — 21 October 2026: Logged Simulink Step-Response Metrics
-
-### 46. Logging the Aircraft Yaw-Rate Signal
-
-A `To Workspace` block was connected to the aircraft yaw-rate signal at the output of the Aircraft transfer-function block, before the washout filter. The signal was logged as a `Timeseries` under the variable name `yaw_rate`. The simulation was run for 20 seconds, and a MATLAB script retrieved the logged signal from the simulation output object and extracted its time and data arrays.
-
-The metrics were calculated from the logged simulation data rather than estimated from the Scope plots. The measured values for this run are:
-
-| Metric | Simulink result |
-|---|---:|
-| Final yaw rate | -0.178572 |
-| Maximum yaw rate | 1.112467 |
-| Time of maximum yaw rate | 0.7330 s |
-| Minimum yaw rate | -0.374355 |
-| Time of minimum yaw rate | 2.7290 s |
-| Approximate 2% settling time | 7.8979 s |
-| Simulation duration | 20 s |
-
-### 47. MATLAB–Simulink Peak Comparison
-
-The earlier MATLAB transfer-function analysis reported a maximum yaw rate of 1.1291 and a minimum of -0.3761. The logged Simulink values differ by approximately 1.47% for the positive maximum and 0.46% in the magnitude of the negative minimum.
-
-| Metric | MATLAB | Simulink | Difference in magnitude |
-|---|---:|---:|---:|
-| Maximum yaw rate | 1.1291 | 1.112467 | 1.47% |
-| Minimum yaw rate | -0.3761 | -0.374355 | 0.46% |
-| Steady-state output | -0.17857 | -0.178572 | Approximately 0.001% |
-
-The close agreement supports consistency between the MATLAB and Simulink models for this input, parameter set, and signal scaling. It does not by itself validate the physical feedback sign or establish compliance with all assignment criteria.
-
-### 48. Settling-Time Definition and Limitation
-
-The script defines the final value as the last logged sample and calculates a 2% band using 2% of the absolute value of that final sample. With the measured final value of -0.178572, the tolerance is approximately 0.003571, giving a band of approximately -0.182143 to -0.175001. The reported settling time of 7.8979 s is the first logged time after the last sample outside this band.
-
-This is a settling time relative to the measured nonzero final value, not a settling time relative to zero. Because the script uses the final simulation sample as its reference, the value should be described as an approximate settling time for the 20-second run rather than an independently verified theoretical settling time.
-
-### 49. Conclusion
-
-The logged step-response data provide numerical peak, peak-time, final-value, and settling-time metrics for the aircraft yaw-rate output before the washout filter. The extrema and steady-state value closely match the earlier MATLAB results. Together with the separate pulse and saturation tests documented above, this completes the current set of recorded Simulink checks.
+| Parameter | Closed-loop result | Level I requirement | Result |
+| :--- | :--- | :--- | :--- |
+| Damping ratio ($\zeta_{dr}$) | 0.6461 | $\geq 0.4$ | Pass |
+| Undamped natural freq ($\omega_{nd}$) | 1.9189 rad/s | $\geq 1.0$ rad/s | Pass |
