@@ -824,3 +824,45 @@ Thus, the filter passes transient changes while removing the steady-state compon
 ### 39. Saturation Verification Status
 
 The saturation limits are configured as \(+20\) and \(-20\), assuming the actuator signal is in degrees. In the \(1^\circ\) step test, the servo output remains approximately between \(-1.14\) and 0, so the saturation block is inactive. This test verifies that the block does not disturb the response when the actuator command is within limits; it does not demonstrate limiting behaviour at the boundaries.
+
+## Update 9 — Work done on 21 October 2026: Simulink Pulse-Test Results
+
+### 40. Pulse Input Verification
+
+A pulse was generated using two Step blocks: the first applies an amplitude of 2 at \(t=0\), and the second applies \(-2\) at \(t=1\ \text{s}\). The two signals are summed, giving an input of 2 for the first second and zero thereafter:
+
+$$
+u(t)=
+\begin{cases}
+2, & 0\leq t<1,\\
+0, & t\geq1.
+\end{cases}
+$$
+
+The input scope confirms the intended pulse shape.
+
+### 41. Scope 1 — Signal Entering the Servo
+
+The servo input starts at 2, changes during the pulse, and changes sharply when the external command returns to zero at \(t=1\ \text{s}\). It then decays towards zero. The response includes feedback-loop dynamics; it is not simply the external pulse because the feedback signal is subtracted at the Sum block.
+
+### 42. Scope 2 — Servo Output Before Saturation
+
+The servo output exhibits a negative transient, with a plotted minimum of approximately \(-1.7\), and then approaches zero after the pulse. The negative response is consistent with the negative numerator of the servo transfer function,
+
+$$
+G_s(s)=\frac{-10}{s+10}.
+$$
+
+The observed output remains inside the configured limits of \(\pm20\), so the saturation block does not activate during this pulse test.
+
+### 43. Scope 3 — Aircraft Yaw-Rate Output
+
+The aircraft yaw-rate signal reaches approximately \(+2.2\), undershoots to approximately \(-2.3\), and decays towards zero after the pulse ends. Since the input returns to zero, a transient response that decays to zero is expected for a stable system with no persistent command. The plotted response appears to settle by approximately 6–8 seconds.
+
+### 44. Scope 4 — Washout-Filter Output
+
+The washout-filter output shows a transient, including a negative excursion of approximately \(-2.45\), followed by a smaller positive response and decay towards zero. This is consistent with the washout filter responding to changes in yaw rate while rejecting its steady-state component.
+
+### 45. Pulse-Test Conclusion
+
+The pulse generator produces the intended input, and the signals in the servo, aircraft, and washout stages show transient behaviour that decays after the pulse. The rudder signal does not approach the \(\pm20\) saturation limits in this test; therefore, this run does not demonstrate active saturation. The observed peaks and minima are approximate readings from Scope plots, not exact measurements extracted from logged simulation data.
