@@ -643,3 +643,77 @@ $$
 $$
 
 The calculated final value agrees with the plotted response. The negative sign follows from the specified servo transfer function. Its interpretation as a physical rudder direction depends on the signal definitions and sign convention.
+
+## Update 6 — Work done on 21 October 2026: Closed-Loop Pole Verification
+
+### 25. Model Configuration
+
+The command-to-yaw-rate transfer function was evaluated for the candidate parameters
+
+$$
+K=0.25,\qquad \tau=2\ \text{s},
+$$
+
+using the standard negative-feedback arrangement
+
+$$
+T_{\mathrm{cmd}}(s)=
+\frac{P(s)G_s(s)}{1+K P(s)G_s(s)H_w(s)}.
+$$
+
+The model uses the aircraft plant, rudder servo, and washout filter specified earlier in this report.
+
+### 26. Closed-Loop Poles and Damping
+
+MATLAB returned the following closed-loop poles:
+
+$$
+s_1=-8.4451,
+$$
+
+$$
+s_{2,3}=-1.2398\pm j1.4647,
+$$
+
+$$
+s_4=-0.6753.
+$$
+
+All poles have negative real parts. The command-response model is therefore asymptotically stable for this parameter set, assuming the feedback sign and model structure are correct.
+
+The complex-conjugate pair has damping ratio
+
+$$
+\boxed{\zeta\approx0.646}
+$$
+
+and natural frequency
+
+$$
+\omega_n\approx1.92\ \text{rad/s}.
+$$
+
+The pair satisfies the numerical damping requirement of $\zeta_{dr}\geq0.4$, provided this pair is the relevant Dutch-roll mode for the supplied model. The real poles are non-oscillatory modes; their MATLAB-reported damping ratios are 1.0. The slower real pole at $-0.6753$ has a time constant of approximately
+
+$$
+\tau_p=\frac{1}{0.6753}\approx1.48\ \text{s}.
+$$
+
+This real pole contributes to the non-oscillatory tail of the time response.
+
+### 27. Response-Plot Interpretation
+
+The command-to-yaw-rate step response exhibits an initial positive peak, a negative undershoot, and a final value near $-0.1786$ per unit command. The nonzero steady-state value is consistent with the DC gain calculated previously:
+
+$$
+T_{\mathrm{cmd}}(0)=P(0)G_s(0)=-0.17857,
+$$
+
+because the washout filter has zero DC gain and therefore contributes no steady-state feedback.
+
+The response is consistent with the pole and DC-gain calculations. However, the result remains conditional on validating the physical feedback sign and the interpretation of the input and output directions.
+
+### 28. Current Status
+
+For $K=0.25$ and $\tau=2\ \text{s}$, the linear command-response model is stable and its complex pole pair has a damping ratio above 0.4. This makes the parameter set a candidate for the next verification stage, not a finalized design.
+
